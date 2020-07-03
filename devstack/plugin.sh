@@ -38,16 +38,6 @@ function octavia_lib_install {
     fi
 }
 
-function install_diskimage_builder {
-    if use_library_from_git "diskimage-builder"; then
-        GITREPO["diskimage-builder"]=$DISKIMAGE_BUILDER_REPO_URL
-        GITDIR["diskimage-builder"]=$DISKIMAGE_BUILDER_DIR
-        GITBRANCH["diskimage-builder"]=$DISKIMAGE_BUILDER_REPO_REF
-        git_clone_by_name "diskimage-builder"
-        setup_dev_lib "diskimage-builder"
-    fi
-}
-
 function set_octavia_worker_image_owner_id {
     image_id=$(openstack image list --property name=${OCTAVIA_AMP_IMAGE_NAME} -f value -c ID)
     owner_id=$(openstack image show ${image_id} -c owner -f value)
@@ -55,9 +45,6 @@ function set_octavia_worker_image_owner_id {
 }
 
 function build_octavia_worker_image {
-    # set up diskimage-builder if we need to
-    install_diskimage_builder
-
     # Pull in DIB local elements if they are defined in devstack
     if [ -n "$DIB_LOCAL_ELEMENTS" ]; then
         export DIB_LOCAL_ELEMENTS=$DIB_LOCAL_ELEMENTS
