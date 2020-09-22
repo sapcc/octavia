@@ -31,6 +31,7 @@ from octavia.common import exceptions
 import octavia.common.validate as validate
 from octavia.db import api as db_api
 from octavia.db import prepare as db_prepare
+from octavia.f5_extensions import workarounds as f5_workarounds
 
 
 LOG = logging.getLogger(__name__)
@@ -156,6 +157,8 @@ class MemberController(base.BaseController):
         pool = self.repositories.pool.get(context.session, id=self.pool_id)
         member.project_id, provider = self._get_lb_project_id_provider(
             context.session, pool.load_balancer_id)
+
+        f5_workarounds.check_member_for_invalid_ip(member.address, pool.load_balancer);
 
         self._auth_validate_action(context, member.project_id,
                                    constants.RBAC_POST)
