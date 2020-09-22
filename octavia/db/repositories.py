@@ -37,6 +37,7 @@ from octavia.common import data_models
 from octavia.common import exceptions
 from octavia.common import validate
 from octavia.db import models
+from octavia.f5_extensions import workarounds as f5_workarounds
 
 CONF = cfg.CONF
 
@@ -267,6 +268,9 @@ class Repositories(object):
             session.add(lb)
             vip_dict['load_balancer_id'] = lb_dict['id']
             vip = models.Vip(**vip_dict)
+
+            f5_workarounds.check_loadbalancer_for_invalid_ip(vip)
+
             session.add(vip)
         return self.load_balancer.get(session, id=lb.id)
 
