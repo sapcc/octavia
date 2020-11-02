@@ -17,30 +17,24 @@ from octavia.db import repositories
 from octavia.f5_extensions import exceptions
 
 
-def check_member_for_invalid_ip(member_address, load_balancer):
+def check_member_for_invalid_ip(session, repositories, member_address, load_balancer):
     """When creating a pool member that has the same IP as any VIP in the same network it will lead to error messages
     on the F5 BigIP device, thus making the whole AS3 declaration fail. This function checks the IP address of the
     given member and raises an exception if it finds a conflict. """
 
-    vipRepo = repositories.VipRepository()
-    session = db_api.get_session(autocommit=False)
-
     # get VIPs from network
-    conflicts = vipRepo.get(session, network_id=load_balancer.vip.network_id, ip_address=member_address)
+    conflicts = repositories.vip.get(session, network_id=load_balancer.vip.network_id, ip_address=member_address)
 
     if conflicts:
         raise exceptions.MemberIpConflictingWithVipException(ip=member_address)
 
-def check_loadbalancer_for_invalid_ip(vip):
+def check_loadbalancer_for_invalid_ip(session, repositories, vip):
     """When creating a load balancer that has the same IP as any pool member in the same network it will lead to
     error messages on the F5 BigIP device, thus making the whole AS3 declaration fail. This function checks the IP
     address of the given load balancer and raises an exception if it finds a conflict. """
 
-    memberRepo = repositories.MemberRepository()
-    session = db_api.get_session(autocommit=False)
-
     # get possibly conflicting members
-    candidates = memberRepo.get_all(session, ip_address=vip.ip_address)
+    candidates = repositories.member.get_all(session, ip_address=vip.ip_address)
 
     # check if any of the candidates' loadbalancers is in the same network as this vip
     for candidate in candidates[0]:

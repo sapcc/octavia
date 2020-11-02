@@ -158,8 +158,6 @@ class MemberController(base.BaseController):
         member.project_id, provider = self._get_lb_project_id_provider(
             context.session, pool.load_balancer_id)
 
-        f5_workarounds.check_member_for_invalid_ip(member.address, pool.load_balancer);
-
         self._auth_validate_action(context, member.project_id,
                                    constants.RBAC_POST)
 
@@ -168,6 +166,9 @@ class MemberController(base.BaseController):
 
         lock_session = db_api.get_session(autocommit=False)
         try:
+            f5_workarounds.check_member_for_invalid_ip(lock_session, self.repositories,
+                                                       member.address, pool.load_balancer)
+
             if self.repositories.check_quota_met(
                     context.session,
                     lock_session,
