@@ -429,7 +429,7 @@ class LoadBalancersController(base.BaseController):
                 if 'port_id' not in vip_dict or not vip_dict['port_id']:
                     octavia_owned = True
 
-            f5_workarounds.check_loadbalancer_for_invalid_ip(vip)
+            f5_workarounds.check_loadbalancer_for_invalid_ip(lock_session, self.repositories, vip)
 
             self.repositories.vip.update(
                 lock_session, db_lb.id, ip_address=vip.ip_address,
