@@ -1076,7 +1076,8 @@ class AllRepositoriesTest(base.OctaviaDBTestBase):
         self.assertIsNone(self.repos.load_balancer.get(self.session,
                                                        name='lb2'))
 
-    def test_check_quota_met(self):
+    @mock.patch('oslo_db.api.wrap_db_retry')
+    def test_check_quota_met(self, _):
 
         project_id = uuidutils.generate_uuid()
 
