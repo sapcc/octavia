@@ -748,8 +748,8 @@ class FailoverController(LoadBalancersController):
         super(FailoverController, self).__init__()
         self.lb_id = lb_id
 
-    @wsme_pecan.wsexpose(None, wtypes.text, wtypes.text, status_code=202)
-    def put(self, from_host=None, to_host=None, **kwargs):
+    @wsme_pecan.wsexpose(None, wtypes.text, status_code=202)
+    def put(self, to_host=None, **kwargs):
         """Fails over a loadbalancer"""
         context = pecan.request.context.get('octavia_context')
         db_lb = self._get_db_lb(context.session, self.lb_id,
@@ -762,9 +762,9 @@ class FailoverController(LoadBalancersController):
         driver = driver_factory.get_driver(db_lb.provider)
 
         with db_api.get_lock_session() as lock_session:
-            # Don't change the LB's provisioning_status. It'll be checked/changed in the driver.
+            # Don't change the provisioning_status. It'll be checked/changed in the driver.
             # self._test_and_set_failover_prov_status(lock_session, self.lb_id)
             LOG.info("Sending failover request for load balancer %s to the "
                      "provider %s", self.lb_id, driver.name)
             driver_utils.call_provider(
-                driver.name, driver.loadbalancer_failover, self.lb_id, from_host, to_host)
+                driver.name, driver.loadbalancer_failover, self.lb_id, to_host)

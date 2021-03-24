@@ -105,8 +105,8 @@ class FailoverController(base.BaseController):
         self.amp_id = amp_id
 
     @wsme_pecan.wsexpose(None, wtypes.text, status_code=202)
-    def put(self):
-        """Fails over an amphora"""
+    def put(self, to_host=None):
+        """Fails over all load balancers from host that has amphora to to_host"""
         pcontext = pecan.request.context
         context = pcontext.get('octavia_context')
         db_amp = self._get_db_amp(context.session, self.amp_id,
@@ -117,24 +117,16 @@ class FailoverController(base.BaseController):
             self._auth_validate_action(
                 context, db_amp.load_balancer.project_id,
                 constants.RBAC_PUT_FAILOVER)
-
-            self.repositories.load_balancer.test_and_set_provisioning_status(
-                context.session, db_amp.load_balancer_id,
-                status=constants.PENDING_UPDATE, raise_exception=True)
+            # Don't change the provisioning_status. It'll be checked/changed in the driver.
         else:
             self._auth_validate_action(
                 context, context.project_id, constants.RBAC_PUT_FAILOVER)
 
-        try:
-            LOG.info("Sending failover request for amphora %s to the queue",
-                     self.amp_id)
-            payload = {constants.AMPHORA_ID: db_amp.id}
-            self.client.cast({}, 'failover_amphora', **payload)
-        except Exception:
-            with excutils.save_and_reraise_exception(reraise=False):
-                self.repositories.load_balancer.update(
-                    context.session, db_amp.load_balancer.id,
-                    provisioning_status=constants.ERROR)
+        LOG.info("Sending failover request for amphora %s to the queue",
+                 self.amp_id)
+        payload = {constants.AMPHORA_ID: db_amp.id,
+                   'to_host': to_host}
+        self.client.cast({}, 'failover_amphora', **payload)
 
 
 class AmphoraUpdateController(base.BaseController):
