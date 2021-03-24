@@ -54,15 +54,15 @@ class Endpoint(object):
         LOG.info('Deleting load balancer \'%s\'...', load_balancer_id)
         self.worker.delete_load_balancer(load_balancer_id, cascade)
 
-    def failover_load_balancer(self, context, load_balancer_id, from_host, to_host):
-        LOG.info('Failing over amphora in load balancer \'%s\'...',
-                 load_balancer_id)
-        self.worker.failover_loadbalancer(load_balancer_id, from_host, to_host)
+    def failover_load_balancer(self, context, load_balancer_id, to_host):
+        LOG.info('Failing over load balancer \'%s\' to host \'%s\'...',
+                 load_balancer_id, to_host)
+        self.worker.failover_loadbalancer(load_balancer_id, to_host)
 
-    def failover_amphora(self, context, amphora_id):
-        LOG.info('Failing over amphora \'%s\'...',
-                 amphora_id)
-        self.worker.failover_amphora(amphora_id)
+    def failover_amphora(self, context, amphora_id, to_host):
+        LOG.info('Failing over amphora \'%s\' to host \'%s\'...',
+                 amphora_id, to_host)
+        self.worker.failover_amphora(amphora_id, to_host)
 
     def create_listener(self, context, listener_id):
         LOG.info('Creating listener \'%s\'...', listener_id)
