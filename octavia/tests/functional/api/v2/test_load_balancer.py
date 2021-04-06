@@ -22,6 +22,7 @@ from oslo_utils import uuidutils
 from sqlalchemy.orm import exc as sa_exception
 
 from octavia.api.drivers import exceptions as provider_exceptions
+from octavia.api.drivers import driver_factory
 from octavia.common import constants
 import octavia.common.context
 from octavia.common import data_models
@@ -935,6 +936,8 @@ class TestLoadBalancer(base.BaseAPITest):
         with mock.patch('oslo_messaging.get_rpc_transport'):
             with mock.patch('oslo_messaging.Target'):
                 with mock.patch('oslo_messaging.RPCClient'):
+                    # Invalidate Provider cache for Mocks
+                    driver_factory.PROVIDER_CACHE = {}
                     response = self.post(self.LBS_PATH, body)
         api_lb = response.json.get(self.root_tag)
         self._assert_request_matches_response(lb_json, api_lb)
