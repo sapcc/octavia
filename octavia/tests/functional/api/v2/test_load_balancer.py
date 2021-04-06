@@ -22,6 +22,7 @@ from oslo_config import fixture as oslo_fixture
 from oslo_utils import uuidutils
 from sqlalchemy.orm import exc as sa_exception
 
+from octavia.api.drivers import driver_factory
 from octavia.common import constants
 import octavia.common.context
 from octavia.common import data_models
@@ -936,6 +937,8 @@ class TestLoadBalancer(base.BaseAPITest):
                 'oslo_messaging.get_rpc_transport'), mock.patch(
                 'oslo_messaging.Target'), mock.patch(
                 'oslo_messaging.RPCClient'):
+                        # Invalidate Provider cache for Mocks
+            driver_factory.PROVIDER_CACHE = {}
             mock_get_network.return_value = mock.MagicMock()
             mock_get_network.return_value.port_security_enabled = True
             response = self.post(self.LBS_PATH, body)
