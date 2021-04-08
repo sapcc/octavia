@@ -127,32 +127,6 @@ class TestAmphora(base.BaseAPITest):
             amphora_id=self.amp_id)).json.get(self.root_tag)
         self._assert_amp_equal(self.amp_args, response)
 
-    @mock.patch('oslo_messaging.RPCClient.cast')
-    def test_failover(self, mock_cast):
-        self.put(self.AMPHORA_FAILOVER_PATH.format(
-            amphora_id=self.amp_id), body={}, status=202)
-        payload = {constants.AMPHORA_ID: self.amp_id}
-        mock_cast.assert_called_with({}, 'failover_amphora', **payload)
-
-    @mock.patch('oslo_messaging.RPCClient.cast')
-    def test_failover_spare(self, mock_cast):
-        amp_args = {
-            'compute_id': uuidutils.generate_uuid(),
-            'status': constants.AMPHORA_READY,
-            'lb_network_ip': '192.168.1.2',
-            'cert_expiration': datetime.datetime.now(),
-            'cert_busy': False,
-            'cached_zone': 'zone1',
-            'created_at': datetime.datetime.now(),
-            'updated_at': datetime.datetime.now(),
-            'image_id': uuidutils.generate_uuid(),
-        }
-        amp = self.amphora_repo.create(self.session, **amp_args)
-        self.put(self.AMPHORA_FAILOVER_PATH.format(
-            amphora_id=amp.id), body={}, status=202)
-        payload = {constants.AMPHORA_ID: amp.id}
-        mock_cast.assert_called_once_with({}, 'failover_amphora', **payload)
-
     def test_failover_deleted(self):
         new_amp = self._create_additional_amp()
         self.amphora_repo.update(self.session, new_amp.id,
@@ -206,37 +180,6 @@ class TestAmphora(base.BaseAPITest):
         # Reset api auth setting
         self.conf.config(group='api_settings', auth_strategy=auth_strategy)
         self.assertEqual(self.NOT_AUTHORIZED_BODY, response.json)
-
-    @mock.patch('oslo_messaging.RPCClient.cast')
-    def test_failover_authorized(self, mock_cast):
-        self.conf = self.useFixture(oslo_fixture.Config(cfg.CONF))
-        auth_strategy = self.conf.conf.api_settings.get('auth_strategy')
-        self.conf.config(group='api_settings', auth_strategy=constants.TESTING)
-        with mock.patch.object(octavia.common.context.Context, 'project_id',
-                               self.project_id):
-            override_credentials = {
-                'service_user_id': None,
-                'user_domain_id': None,
-                'is_admin_project': True,
-                'service_project_domain_id': None,
-                'service_project_id': None,
-                'roles': ['load-balancer_member'],
-                'user_id': None,
-                'is_admin': True,
-                'service_user_domain_id': None,
-                'project_domain_id': None,
-                'service_roles': [],
-                'project_id': self.project_id}
-            with mock.patch(
-                    "oslo_context.context.RequestContext.to_policy_values",
-                    return_value=override_credentials):
-                self.put(self.AMPHORA_FAILOVER_PATH.format(
-                    amphora_id=self.amp_id), body={}, status=202)
-
-        # Reset api auth setting
-        self.conf.config(group='api_settings', auth_strategy=auth_strategy)
-        payload = {constants.AMPHORA_ID: self.amp_id}
-        mock_cast.assert_called_once_with({}, 'failover_amphora', **payload)
 
     @mock.patch('oslo_messaging.RPCClient.cast')
     def test_failover_not_authorized(self, mock_cast):
