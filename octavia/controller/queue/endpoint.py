@@ -59,6 +59,16 @@ class Endpoint(object):
                  load_balancer_id)
         self.worker.failover_loadbalancer(load_balancer_id)
 
+    def migrate_load_balancer(self, context, load_balancer_id, target_host):
+        LOG.info('Migrating load balancer %s to host \'%s\'...',
+                 load_balancer_id, target_host)
+        self.worker.migrate_loadbalancer(load_balancer_id, target_host)
+
+    def migrate_load_balancers(self, context, source_host, target_host):
+        LOG.info('Migrating load balancers from host \'%s\' to host \'%s\'...',
+                 source_host, target_host)
+        self.worker.migrate_loadbalancers(source_host, target_host)
+
     def failover_amphora(self, context, amphora_id):
         LOG.info('Failing over amphora \'%s\'...',
                  amphora_id)
