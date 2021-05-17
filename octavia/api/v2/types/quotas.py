@@ -61,6 +61,36 @@ class QuotaResponse(base.BaseType):
         return quotas
 
 
+class QuotaUsageBase(base.BaseType):
+    """Individual quota definitions."""
+    load_balancers = wtypes.wsattr(wtypes.IntegerType(
+        minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
+    listeners = wtypes.wsattr(wtypes.IntegerType(
+        minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
+    members = wtypes.wsattr(wtypes.IntegerType(
+        minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
+    pools = wtypes.wsattr(wtypes.IntegerType(
+        minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
+    l7policies = wtypes.wsattr(wtypes.IntegerType(
+        minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
+    l7rules = wtypes.wsattr(wtypes.IntegerType(
+        minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
+    health_monitors = wtypes.wsattr(wtypes.IntegerType(
+        minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
+
+
+class QuotaUsageResponse(base.BaseType):
+    """Wrapper object for quotas responses."""
+    quota_usage = wtypes.wsattr(QuotaUsageBase)
+
+    @classmethod
+    def from_data_model(cls, data_model, children=False):
+        response = super(QuotaUsageResponse, cls).from_data_model(
+            data_model, children=children)
+        response.quota_usage = QuotaUsageBase.from_data_model(data_model)
+        return response
+
+
 class QuotaAllBase(base.BaseType):
     """Wrapper object for get all quotas responses."""
     project_id = wtypes.wsattr(wtypes.StringType())
