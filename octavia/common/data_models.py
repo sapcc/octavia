@@ -760,20 +760,20 @@ class Quotas(BaseDataModel):
 class QuotaUsage(BaseDataModel):
 
     def __init__(self,
-                 load_balancers=None,
-                 listeners=None,
-                 pools=None,
-                 health_monitors=None,
-                 members=None,
-                 l7policies=None,
-                 l7rules=None):
-        self.health_monitors = health_monitors
-        self.listeners = listeners
-        self.load_balancers = load_balancers
-        self.pools = pools
-        self.members = members
-        self.l7policies = l7policies
-        self.l7rules = l7rules
+                 loadbalancer=None,
+                 listener=None,
+                 pool=None,
+                 healthmonitor=None,
+                 member=None,
+                 l7policy=None,
+                 l7rule=None):
+        self.healthmonitor = healthmonitor
+        self.listener = listener
+        self.loadbalancer = loadbalancer
+        self.pool = pool
+        self.member = member
+        self.l7policy = l7policy
+        self.l7rule = l7rule
 
 
 class Flavor(BaseDataModel):

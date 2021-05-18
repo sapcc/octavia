@@ -82,22 +82,22 @@ class TestQuotaUsage(base.BaseAPITest):
                                   name='lb2', project_id=project2_id,
                                   tags=['test_tag2'])
         usage1 = {
-            'health_monitors': 1,
-            'listeners': 1,
-            'load_balancers': 1,
-            'pools': 1,
-            'members': 2,
-            'l7policies': 1,
-            'l7rules': 1,
+            'healthmonitor': 1,
+            'listener': 1,
+            'loadbalancer': 1,
+            'pool': 1,
+            'member': 2,
+            'l7policy': 1,
+            'l7rule': 1,
         }
         usage2 = {
-            'health_monitors': 0,
-            'listeners': 0,
-            'load_balancers': 1,
-            'pools': 0,
-            'members': 0,
-            'l7policies': 0,
-            'l7rules': 0,
+            'healthmonitor': 0,
+            'listener': 0,
+            'loadbalancer': 1,
+            'pool': 0,
+            'member': 0,
+            'l7policy': 0,
+            'l7rule': 0,
         }
 
         quota_usage = self.get(
@@ -153,13 +153,13 @@ class TestQuotaUsage(base.BaseAPITest):
                 ).json.get(self.root_tag)
         self.conf.config(group='api_settings', auth_strategy=auth_strategy)
         usage = {
-            'health_monitors': 0,
-            'listeners': 0,
-            'load_balancers': 1,
-            'pools': 0,
-            'members': 0,
-            'l7policies': 0,
-            'l7rules': 0,
+            'healthmonitor': 0,
+            'listener': 0,
+            'loadbalancer': 1,
+            'pool': 0,
+            'member': 0,
+            'l7policy': 0,
+            'l7rule': 0,
         }
         self.assertEqual(usage, result)
 

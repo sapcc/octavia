@@ -63,19 +63,19 @@ class QuotaResponse(base.BaseType):
 
 class QuotaUsageBase(base.BaseType):
     """Individual quota definitions."""
-    load_balancers = wtypes.wsattr(wtypes.IntegerType(
+    loadbalancer = wtypes.wsattr(wtypes.IntegerType(
         minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
-    listeners = wtypes.wsattr(wtypes.IntegerType(
+    listener = wtypes.wsattr(wtypes.IntegerType(
         minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
-    members = wtypes.wsattr(wtypes.IntegerType(
+    member = wtypes.wsattr(wtypes.IntegerType(
         minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
-    pools = wtypes.wsattr(wtypes.IntegerType(
+    pool = wtypes.wsattr(wtypes.IntegerType(
         minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
-    l7policies = wtypes.wsattr(wtypes.IntegerType(
+    l7policy = wtypes.wsattr(wtypes.IntegerType(
         minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
-    l7rules = wtypes.wsattr(wtypes.IntegerType(
+    l7rule = wtypes.wsattr(wtypes.IntegerType(
         minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
-    health_monitors = wtypes.wsattr(wtypes.IntegerType(
+    healthmonitor = wtypes.wsattr(wtypes.IntegerType(
         minimum=consts.MIN_QUOTA, maximum=consts.MAX_QUOTA))
 
 
