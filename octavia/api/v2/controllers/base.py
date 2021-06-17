@@ -220,19 +220,19 @@ class BaseController(pecan_rest.RestController):
         # TODO(Vadim Ponomarev): use stored quota usage in database instead
         # counting when we will fix quota counting inside f5 amphora driver.
         loadbalancer = self.repositories.load_balancer.count(
-            session, project_id=project_id)
+            session, project_id=project_id, show_deleted=False)
         listener = self.repositories.listener.count(
-            session, project_id=project_id)
+            session, project_id=project_id, show_deleted=False)
         pool = self.repositories.pool.count(
-            session, project_id=project_id)
+            session, project_id=project_id, show_deleted=False)
         member = self.repositories.member.count(
-            session, project_id=project_id)
+            session, project_id=project_id, show_deleted=False)
         l7policy = self.repositories.l7policy.count(
-            session, project_id=project_id)
+            session, project_id=project_id, show_deleted=False)
         l7rule = self.repositories.l7rule.count(
-            session, project_id=project_id)
+            session, project_id=project_id, show_deleted=False)
         healthmonitor = self.repositories.health_monitor.count(
-            session, project_id=project_id)
+            session, project_id=project_id, show_deleted=False)
         return data_models.QuotaUsage(
             loadbalancer=loadbalancer,
             listener=listener,
