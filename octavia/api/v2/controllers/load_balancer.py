@@ -462,7 +462,8 @@ class LoadBalancersController(base.BaseController):
                 try:
                     network_driver.deallocate_vip(vip)
                 except network_base.DeallocateVIPException:
-                    pass
+                    LOG.error("Cannot deallocate VIP of LB {}, IP {}, port {}",
+                              vip.load_balancer_id, vip.ip_address, vip.port_id)
             with excutils.save_and_reraise_exception():
                 lock_session.rollback()
 
