@@ -390,6 +390,7 @@ class LoadBalancersController(base.BaseController):
     @oslo_db_api.wrap_db_retry(retry_on_deadlock=True)
     def _create_loadbalancer(self, load_balancer, driver, session):
         lock_session = db_api.get_session(autocommit=False)
+        vip = None
         try:
             if self.repositories.check_quota_met(
                     session,
@@ -477,6 +478,14 @@ class LoadBalancersController(base.BaseController):
             lock_session.rollback()
             raise exceptions.IDAlreadyExists()
         except Exception:
+            # Delete VIP if for example quota not met for fully
+            # populated load balancer.
+            if vip:
+                network_driver = utils.get_network_driver()
+                try:
+                    network_driver.deallocate_vip(vip)
+                except network_base.DeallocateVIPException:
+                    pass
             with excutils.save_and_reraise_exception():
                 lock_session.rollback()
 
