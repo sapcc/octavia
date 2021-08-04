@@ -677,6 +677,7 @@ class LoadBalancersController(base.BaseController):
         neutron-lbaas LBaaS v2 API.
         """
 
+        # custom migration logic for octavia-f5-provider-driver
         if id == 'migrate' and not remainder:
             return MigrationController(), remainder
 
@@ -813,7 +814,7 @@ class LoadBalancerMigrationController(LoadBalancersController):
         super(LoadBalancerMigrationController, self).__init__()
         self.lb_id = lb_id
 
-    @wsme_pecan.wsexpose(None, wtypes.text, wtypes.text, status_code=202)
+    @wsme_pecan.wsexpose(None, wtypes.text, status_code=202)
     def put(self, target_host, **kwargs):
         """Migrates one load balancer to a target host"""
         context = pecan.request.context.get('octavia_context')
