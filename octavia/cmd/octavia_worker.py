@@ -21,7 +21,6 @@ from oslo_reports import guru_meditation_report as gmr
 
 from octavia.common import service as octavia_service
 from octavia.controller.queue.v1 import consumer as consumer_v1
-from octavia.controller.queue.v2 import consumer as consumer_v2
 from octavia import version
 
 CONF = cfg.CONF
@@ -35,8 +34,6 @@ def main():
     sm = cotyledon.ServiceManager()
     sm.add(consumer_v1.ConsumerService, workers=CONF.controller_worker.workers,
            args=(CONF,))
-    sm.add(consumer_v2.ConsumerService,
-           workers=CONF.controller_worker.workers, args=(CONF,))
     oslo_config_glue.setup(sm, CONF, reload_method="mutate")
     sm.run()
 
