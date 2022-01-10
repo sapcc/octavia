@@ -227,10 +227,11 @@ L7_ESD_POLICIES = ['x_forward_5b6e_v1_0', 'one_connect_dd5c_v1_0',
                    'cookie_encryption_b82a_v1_0', 'sso_22b0_v1_0',
                    'sso_required_f544_v1_0', 'http_redirect_a26c_v1_0',
                    'hcm_rmk_restrict_internal']
+L7_ESD_POLICIES_NO_SSO = [ p for p in L7_ESD_POLICIES if not p.startswith("sso_") ]
 VALID_LISTENER_ESD_MAP = {
     PROTOCOL_PROXY: L4_ESD_POLICIES,
     PROTOCOL_TCP: L4_ESD_POLICIES,
-    PROTOCOL_HTTP: L4_ESD_POLICIES + L7_ESD_POLICIES,
+    PROTOCOL_HTTP: L4_ESD_POLICIES + L7_ESD_POLICIES_NO_SSO,
     PROTOCOL_HTTPS: L4_ESD_POLICIES,
     PROTOCOL_TERMINATED_HTTPS: L4_ESD_POLICIES + L7_ESD_POLICIES,
     PROTOCOL_UDP: [],
