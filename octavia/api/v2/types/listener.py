@@ -114,7 +114,7 @@ class ListenerPOST(BaseListenerType):
     protocol = wtypes.wsattr(wtypes.Enum(str, *constants.SUPPORTED_PROTOCOLS),
                              mandatory=True)
     protocol_port = wtypes.wsattr(
-        wtypes.IntegerType(minimum=constants.MIN_PORT_NUMBER,
+        wtypes.IntegerType(minimum=constants.MIN_PORT_NUMBER_LISTENER,
                            maximum=constants.MAX_PORT_NUMBER), mandatory=True)
     connection_limit = wtypes.wsattr(
         wtypes.IntegerType(minimum=constants.MIN_CONNECTION_LIMIT),
@@ -208,7 +208,7 @@ class ListenerSingleCreate(BaseListenerType):
     protocol = wtypes.wsattr(wtypes.Enum(str, *constants.SUPPORTED_PROTOCOLS),
                              mandatory=True)
     protocol_port = wtypes.wsattr(
-        wtypes.IntegerType(minimum=constants.MIN_PORT_NUMBER,
+        wtypes.IntegerType(minimum=constants.MIN_PORT_NUMBER_LISTENER,
                            maximum=constants.MAX_PORT_NUMBER), mandatory=True)
     connection_limit = wtypes.wsattr(
         wtypes.IntegerType(minimum=constants.MIN_CONNECTION_LIMIT),
