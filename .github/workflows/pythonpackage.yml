@@ -10,7 +10,7 @@ on:
     branches: [ stable/ussuri-m3 ]
 
 env:
-  UPPER_CONSTRAINTS_FILE: https://raw.githubusercontent.com/sapcc/requirements/stable/ussuri-m3/upper-constraints.txt
+  TOX_CONSTRAINTS_FILE: https://raw.githubusercontent.com/sapcc/requirements/stable/ussuri-m3/upper-constraints.txt
   VIRTUALENV_PIP: "20.2.3"
 
 jobs:
