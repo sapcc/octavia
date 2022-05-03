@@ -34,6 +34,7 @@ from octavia.common import constants
 CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
+_NETWORK_DRIVER = None
 
 
 def get_hostname():
@@ -62,13 +63,15 @@ def get_amphora_driver():
 
 
 def get_network_driver():
-    CONF.import_group('controller_worker', 'octavia.common.config')
-    network_driver = stevedore_driver.DriverManager(
-        namespace='octavia.network.drivers',
-        name=CONF.controller_worker.network_driver,
-        invoke_on_load=True
-    ).driver
-    return network_driver
+    global _NETWORK_DRIVER
+    if _NETWORK_DRIVER is None:
+        CONF.import_group('controller_worker', 'octavia.common.config')
+        _NETWORK_DRIVER = stevedore_driver.DriverManager(
+            namespace='octavia.network.drivers',
+            name=CONF.controller_worker.network_driver,
+            invoke_on_load=True
+        ).driver
+    return _NETWORK_DRIVER
 
 
 def is_ipv4(ip_address):
