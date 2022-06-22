@@ -9,7 +9,7 @@ uwsgi-dogstatsd
 uwsgi-shortmsecs
 
 raven
--e git+https://github.com/sapcc/octavia-f5-provider-driver.git@stable/ussuri-m3#egg=octavia-f5-provider-driver
+-e git+https://github.com/sapcc/octavia-f5-provider-driver.git@stable/yoga-m3#egg=octavia-f5-provider-driver
 git+https://github.com/sapcc/openstack-watcher-middleware.git#egg=watcher-middleware
 git+https://github.com/sapcc/openstack-audit-middleware.git@master#egg=audit-middleware
 git+https://github.com/sapcc/openstack-uwsgi-middleware.git@main#egg=uwsgi-middleware
