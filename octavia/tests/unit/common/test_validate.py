@@ -470,7 +470,7 @@ class TestValidations(base.TestCase):
 
         self.assertRaises(
             exceptions.ValidationException,
-            validate.check_default_ciphers_prohibit_list_conflict)
+            validate.check_default_ciphers_conflict)
 
     def test_check_default_ciphers_allow_list_conflict(self):
         self.conf.config(group='api_settings',
@@ -484,7 +484,7 @@ class TestValidations(base.TestCase):
         self.conf.config(group='api_settings', default_pool_ciphers='')
         self.assertRaises(
             exceptions.ValidationException,
-            validate.check_default_ciphers_prohibit_list_conflict)
+            validate.check_default_ciphers_conflict)
 
         # default pool ciphers conflict
         self.conf.config(group='api_settings', default_listener_ciphers='')
@@ -493,7 +493,7 @@ class TestValidations(base.TestCase):
                          'PSK-AES128-CBC-SHA:TLS_AES_256_GCM_SHA384')
         self.assertRaises(
             exceptions.ValidationException,
-            validate.check_default_ciphers_prohibit_list_conflict)
+            validate.check_default_ciphers_conflict)
 
     def test_check_default_ciphers_allow_list_no_conflict(self):
         self.conf.config(group='api_settings',
@@ -508,7 +508,7 @@ class TestValidations(base.TestCase):
         self.conf.config(group='api_settings',
                          default_pool_ciphers=
                          'PSK-AES128-CBC-SHA:TLS_AES_256_GCM_SHA384')
-        self.assertTrue(validate.check_default_ciphers_prohibit_list_conflict() is None)
+        self.assertTrue(validate.check_default_ciphers_conflict() is None)
 
     def test_check_tls_version_list(self):
         # Test valid list
