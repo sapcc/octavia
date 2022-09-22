@@ -431,7 +431,7 @@ def ip_not_reserved(ip_address):
 
 
 def check_cipher_prohibit_list(cipherstring):
-    if cipherstring == '':
+    if not CONF.api_settings.tls_cipher_prohibit_list:
         return []
     ciphers = cipherstring.split(':')
     prohibit_list = CONF.api_settings.tls_cipher_prohibit_list.split(':')
@@ -443,7 +443,7 @@ def check_cipher_prohibit_list(cipherstring):
 
 
 def check_cipher_allow_list(cipherstring):
-    if cipherstring == '' or CONF.api_settings.tls_cipher_allow_list is None:
+    if not CONF.api_settings.tls_cipher_allow_list:
         return []
     ciphers = cipherstring.split(':')
     allow_list = CONF.api_settings.tls_cipher_allow_list.split(':')
