@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: [3.7]
+        python: [3.8]
 
     steps:
       - uses: actions/checkout@v2
@@ -33,4 +33,4 @@ jobs:
           sudo apt-get -y install build-essential netbase
           pip install tox
       - name: Run Tox
-        run: tox -e py,functional-py37
+        run: tox -e py,functional-py38
