@@ -868,7 +868,7 @@ class MigrationController(LoadBalancersController):
     @wsme_pecan.wsexpose(None, wtypes.text, wtypes.text, status_code=202)
     def put(self, source_host, target_host, **kwargs):
         """Migrates all load balancers from source_host to target_host"""
-        context = pecan.request.context.get('octavia_context')
+        context = pecan_request.context.get('octavia_context')
 
         if not (context.to_policy_values().get('is_admin') or context.is_admin):
             LOG.error("Load balancer migration request: No admin. Unauthorized.")
@@ -890,7 +890,7 @@ class LoadBalancerMigrationController(LoadBalancersController):
     @wsme_pecan.wsexpose(None, wtypes.text, wtypes.text, status_code=202)
     def put(self, target_host, **kwargs):
         """Migrates one load balancer to a target host"""
-        context = pecan.request.context.get('octavia_context')
+        context = pecan_request.context.get('octavia_context')
         db_lb = self._get_db_lb(context.session, self.lb_id,
                                 show_deleted=False)
 
