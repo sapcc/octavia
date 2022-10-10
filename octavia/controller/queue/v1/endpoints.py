@@ -60,15 +60,15 @@ class Endpoints(object):
                  load_balancer_id)
         self.worker.failover_loadbalancer(load_balancer_id)
 
-    def reschedule_load_balancer(self, context, load_balancer_id, target_host):
-        LOG.info('Rescheduling load balancer %s to host \'%s\'...',
-                 load_balancer_id, target_host)
-        self.worker.reschedule_loadbalancer(load_balancer_id, target_host)
+    def add_loadbalancer(self, context, load_balancer_id):
+        LOG.info('Adding (force) load balancer %s...',
+                 load_balancer_id)
+        self.worker.add_loadbalancer(load_balancer_id)
 
-    def reschedule_load_balancers(self, context, source_host, target_host):
-        LOG.info('Rescheduling load balancers from host \'%s\' to host \'%s\'...',
-                 source_host, target_host)
-        self.worker.reschedule_loadbalancers(source_host, target_host)
+    def remove_loadbalancer(self, context, load_balancer_id):
+        LOG.info('Removing (force) load balancer %s...',
+                 load_balancer_id)
+        self.worker.remove_loadbalancer(load_balancer_id)
 
     def failover_amphora(self, context, amphora_id):
         LOG.info('Failing over amphora \'%s\'...',
