@@ -468,7 +468,7 @@ def check_default_ciphers_conflict():
         raise exceptions.ValidationException(
             detail=_('Default listener ciphers contain ciphers not in allow list. '
                      'Disallowed ciphers: ' + ', '.join(listener_rejected) +
-                     'Allowed ciphers: ' + CONF.api_settings.tls_cipher_allow_list))
+                     'Cipher string defining allowed ciphers: ' + CONF.api_settings.tls_cipher_allow_list))
 
     pool_rejected = check_cipher_prohibit_list(
         CONF.api_settings.default_pool_ciphers)
@@ -483,7 +483,7 @@ def check_default_ciphers_conflict():
         raise exceptions.ValidationException(
             detail=_('Default pool ciphers contain ciphers not in allow list. '
                      'Disallowed ciphers: ' + ', '.join(pool_rejected) +
-                     'Allowed ciphers: ' + CONF.api_settings.tls_cipher_allow_list))
+                     'Cipher string defining allowed ciphers: ' + CONF.api_settings.tls_cipher_allow_list))
 
 
 def check_tls_version_list(versions):
