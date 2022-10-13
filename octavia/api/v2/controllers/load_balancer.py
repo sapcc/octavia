@@ -751,14 +751,11 @@ class LoadBalancersController(base.BaseController):
         neutron-lbaas LBaaS v2 API.
         """
 
-        if id == 'migrate' and not remainder:
-            return MigrationController(), remainder
-
         is_children = (
             id and remainder and (
                 remainder[0] == 'status' or remainder[0] == 'statuses' or (
                     remainder[0] == 'stats' or remainder[0] == 'failover'
-                    or remainder[0] == 'migrate'
+                    or remainder[0] == 'reschedule'
                 )
             )
         )
@@ -771,8 +768,8 @@ class LoadBalancersController(base.BaseController):
                 return StatisticsController(lb_id=id), remainder
             if controller == 'failover':
                 return FailoverController(lb_id=id), remainder
-            elif controller == 'migrate':
-                return LoadBalancerMigrationController(lb_id=id), remainder
+            elif controller == 'reschedule':
+                return ReschedulingController(lb_id=id), remainder
         return None
 
 
@@ -860,36 +857,15 @@ class FailoverController(LoadBalancersController):
                 driver.name, driver.loadbalancer_failover, self.lb_id)
 
 
-class MigrationController(LoadBalancersController):
-
-    def __init__(self):
-        super(MigrationController, self).__init__()
-
-    @wsme_pecan.wsexpose(None, wtypes.text, wtypes.text, status_code=202)
-    def put(self, source_host, target_host, **kwargs):
-        """Migrates all load balancers from source_host to target_host"""
-        context = pecan_request.context.get('octavia_context')
-
-        if not (context.to_policy_values().get('is_admin') or context.is_admin):
-            LOG.error("Load balancer migration request: No admin. Unauthorized.")
-            return
-
-        driver = driver_factory.get_driver('f5')
-        LOG.info("Sending migration request with source host %s and target host "
-                 "%s to the provider %s", source_host, target_host, driver.name)
-        driver_utils.call_provider(
-            driver.name, driver.loadbalancers_migrate, source_host, target_host)
-
-
-class LoadBalancerMigrationController(LoadBalancersController):
+class ReschedulingController(LoadBalancersController):
 
     def __init__(self, lb_id):
-        super(LoadBalancerMigrationController, self).__init__()
+        super(ReschedulingController, self).__init__()
         self.lb_id = lb_id
 
     @wsme_pecan.wsexpose(None, wtypes.text, wtypes.text, status_code=202)
     def put(self, target_host, **kwargs):
-        """Migrates one load balancer to a target host"""
+        """Reschedules a load balancer to a target host"""
         context = pecan_request.context.get('octavia_context')
         db_lb = self._get_db_lb(context.session, self.lb_id,
                                 show_deleted=False)
