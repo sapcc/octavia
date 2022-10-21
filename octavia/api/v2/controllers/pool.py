@@ -133,7 +133,7 @@ class PoolsController(base.BaseController):
                 detail = 'The following ciphers have been prohibited by an '\
                          'administrator: ' + ', '.join(rejected_ciphers)
                 if CONF.api_settings.tls_cipher_allow_list is not None:
-                    detail += '. The allowed ciphers are defined by this cipher string: '\
+                    detail += '. The allowed cipher suites are defined by this cipher string: '\
                               + CONF.api_settings.tls_cipher_allow_list
                 raise exceptions.ValidationException(detail=detail)
 
@@ -427,7 +427,7 @@ class PoolsController(base.BaseController):
                 detail = 'The following ciphers have been prohibited by an '\
                          'administrator: ' + ', '.join(rejected_ciphers)
                 if CONF.api_settings.tls_cipher_allow_list is not None:
-                    detail += '. The allowed ciphers are defined by this cipher string: '\
+                    detail += '. The allowed cipher suites are defined by this cipher string: '\
                               + CONF.api_settings.tls_cipher_allow_list
                 raise exceptions.ValidationException(detail=detail)
 
