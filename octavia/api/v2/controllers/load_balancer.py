@@ -863,21 +863,20 @@ class ReschedulingController(LoadBalancersController):
         super(ReschedulingController, self).__init__()
         self.lb_id = lb_id
 
-    @wsme_pecan.wsexpose(None, wtypes.text, wtypes.text, status_code=202)
-    def put(self, target_host, **kwargs):
+    @wsme_pecan.wsexpose(None, wtypes.text, body=lb_types.Rescheduling, status_code=202)
+    def put(self, target_host):
         """Reschedules a load balancer to a target host"""
         context = pecan_request.context.get('octavia_context')
         db_lb = self._get_db_lb(context.session, self.lb_id,
                                 show_deleted=False)
+        target_host = target_host.target_host
 
         if not (context.to_policy_values().get('is_admin') or context.is_admin):
-            LOG.error("Load balancer migration request: No admin. Unauthorized.")
+            LOG.error("Load balancer rescheduling request: No admin. Unauthorized.")
             return
 
         # Load the driver early as it also provides validation
         driver = driver_factory.get_driver(db_lb.provider)
 
-        LOG.info("Sending migration request with target host %s for load balancer "
-                 "%s to the provider %s", target_host, self.lb_id, driver.name)
-        driver_utils.call_provider(
-            driver.name, driver.loadbalancer_migrate, self.lb_id, target_host)
+        LOG.info("Sending rescheduling request with target host %s for load balancer %s", target_host, self.lb_id)
+        driver_utils.call_provider(driver.name, driver.loadbalancer_reschedule, self.lb_id, target_host)
