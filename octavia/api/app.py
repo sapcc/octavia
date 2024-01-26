@@ -14,6 +14,7 @@
 
 import sys
 
+import rate_limit as ratelimitmiddleware
 # Try using custom auditmiddleware
 try:
     import auditmiddleware as audit_middleware
@@ -86,16 +87,33 @@ def setup_app(pecan_config=None, debug=False, argv=None):
 def _wrap_app(app):
     """Wraps wsgi app with additional middlewares."""
 
-    # This needs to be the first middleware (and the last in the chain)
+    # UWSGI needs to be the first middleware (and the last in the chain)
     try:
         from uwsgi_middleware import uwsgi
         app = uwsgi.Uwsgi(app)
     except (EnvironmentError, OSError, ImportError) as e:
         LOG.debug("Could not load uwsgi middleware: %s", e)
 
+    # Inject Request ID
     app = request_id.RequestId(app)
 
     if CONF.audit.enabled:
+
+        # rate limiting - depends on audit middleware, therefore must stand
+        # before it in order to appear after it in the chain
+        app = ratelimitmiddleware.OpenStackRateLimitMiddleware(
+                app,
+                config_file=CONF.rate_limiting.config_file,
+                service_type=CONF.rate_limiting.service_type,
+                rate_limit_by=CONF.rate_limiting.rate_limit_by,
+                max_sleep_time_seconds=CONF.rate_limiting.max_sleep_time_seconds,
+                backend_host=CONF.rate_limiting.backend_host,
+                backend_port=CONF.rate_limiting.backend_port,
+                backend_max_connections=CONF.rate_limiting.backend_max_connections,
+                backend_timeout_seconds=CONF.rate_limiting.backend_timeout_seconds,
+                )
+
+        # audit middleware
         try:
             app = audit_middleware.AuditMiddleware(
                 app,

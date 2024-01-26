@@ -822,6 +822,32 @@ audit_opts = [
                        'using tagged statsd metrics.')),
 ]
 
+rate_limiting_opts = [
+    cfg.StrOpt('config_file', default="/etc/octavia/ratelimit.yaml",
+        help=_('Path to the rate limiting middleware configuration file')),
+    cfg.StrOpt('service_type', default="loadbalancer",
+        help=_('The service type according to CADF specification')),
+    cfg.StrOpt('rate_limit_by',
+        help=_('Per default rate limits are applied based on '
+               '`initiator_project_id`. However, this can also be se to '
+               '`initiator_host_address` or `target_project_id`')),
+    cfg.IntOpt('max_sleep_time_seconds', default=20,
+        help=_('The maximal time a request can be suspended in seconds. '
+                'Instead of immediately returning a rate limit response, '
+                'a request can be suspended until the specified maximum '
+                'duration to fit the configured rate limit. This feature '
+                'can be disabled by setting the max sleep time to 0 seconds.')),
+    cfg.StrOpt('backend_host', default="127.0.0.1",
+        help=_('Redis backend host for rate limiting middleware')),
+    cfg.PortOpt('backend_port', default=6379,
+        help=_('Redis backend port for rate limiting middleware')),
+    cfg.IntOpt('backend_max_connections', default=100,
+        help=_('Maximum connections for redis connection pool.')),
+    cfg.IntOpt('backend_timeout_seconds', default=2,
+        help=_('Timeout for obtaining a connection to the backend. '
+               'It should be >= 1 second. Skips rate limit on timeout.')),
+]
+
 driver_agent_opts = [
     cfg.StrOpt('status_socket_path',
                default='/var/run/octavia/status.sock',
@@ -882,15 +908,6 @@ watcher_opts = [
                help=_('The name of the service according to CADF')),
     cfg.StrOpt('config_file',
                help=_('Path to configuration file')),
-    cfg.StrOpt('statsd_host',
-               default='127.0.0.1',
-               help=_('Host of the StatsD backend')),
-    cfg.StrOpt('statsd_namespace',
-               default='openstack_watcher',
-               help=_('Namespace to use for metrics')),
-    cfg.IntOpt('statsd_port',
-               default=9125,
-               help=_('Port of the StatsD backend')),
     cfg.BoolOpt('target_project_id_from_path',
                 default=False,
                 help=_('Whether to get the target project uid from the path')),
@@ -928,6 +945,7 @@ cfg.CONF.register_opts(glance_opts, group='glance')
 cfg.CONF.register_opts(neutron_opts, group='neutron')
 cfg.CONF.register_opts(quota_opts, group='quotas')
 cfg.CONF.register_opts(audit_opts, group='audit')
+cfg.CONF.register_opts(rate_limiting_opts, group='rate_limiting')
 cfg.CONF.register_opts(driver_agent_opts, group='driver_agent')
 
 cfg.CONF.register_opts(local.certgen_opts, group='certificates')
