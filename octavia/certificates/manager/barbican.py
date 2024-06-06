@@ -19,6 +19,7 @@ Cert manager implementation for Barbican using a single PKCS12 secret
 """
 from OpenSSL import crypto
 
+from barbicanclient import exceptions as barbican_exceptions
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import encodeutils
@@ -115,7 +116,12 @@ class BarbicanCertManager(cert_mgr.CertManager):
             return pkcs12.PKCS12Cert(cert_secret.payload)
         except exceptions.UnreadablePKCS12:
             raise
-        except Exception as e:
+        except barbican_exceptions.HTTPClientError as e:
+            # we only want to try the legacy (container) based retrieval if the pkcs12 cert is not found,
+            # else, just raise the error so we retry the pkcs12 retrieval again
+            if e.status_code != 404:
+                raise
+
             LOG.warning('Failed to load PKCS12Cert for secret %s with %s',
                         cert_ref, str(e))
             LOG.warning('Falling back to the barbican_legacy implementation.')
