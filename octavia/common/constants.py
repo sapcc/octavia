@@ -222,15 +222,15 @@ VALID_LISTENER_POOL_PROTOCOL_MAP = {
 
 L4_ESD_POLICIES = ['proxy_protocol_2edF_v1_0', 'proxy_protocol_V2_e8f6_v1_0',
                    'standard_tcp_a3de_v1_0']
-L7_ESD_POLICIES = ['x_forward_5b6e_v1_0', 'one_connect_dd5c_v1_0',
-                   'no_one_connect_3caB_v1_0', 'http_compression_e4a2_v1_0',
-                   'cookie_encryption_b82a_v1_0', 'sso_22b0_v1_0',
-                   'sso_required_f544_v1_0', 'http_redirect_a26c_v1_0',
-                   'hcm_rmk_restrict_internal']
+L7_ESD_POLICIES_NO_SSO = ['x_forward_5b6e_v1_0', 'one_connect_dd5c_v1_0',
+                          'no_one_connect_3caB_v1_0', 'http_compression_e4a2_v1_0',
+                          'cookie_encryption_b82a_v1_0', 'http_redirect_a26c_v1_0',
+                          'hcm_rmk_restrict_internal']
+L7_ESD_POLICIES = L7_ESD_POLICIES_NO_SSO + ['sso_22b0_v1_0', 'sso_required_f544_v1_0']
 VALID_LISTENER_ESD_MAP = {
     PROTOCOL_PROXY: L4_ESD_POLICIES,
     PROTOCOL_TCP: L4_ESD_POLICIES,
-    PROTOCOL_HTTP: L4_ESD_POLICIES + L7_ESD_POLICIES,
+    PROTOCOL_HTTP: L4_ESD_POLICIES + L7_ESD_POLICIES_NO_SSO,
     PROTOCOL_HTTPS: L4_ESD_POLICIES,
     PROTOCOL_TERMINATED_HTTPS: L4_ESD_POLICIES + L7_ESD_POLICIES,
     PROTOCOL_UDP: [],
