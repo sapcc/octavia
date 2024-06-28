@@ -338,6 +338,9 @@ health_manager_opts = [
 
 oslo_messaging_opts = [
     cfg.StrOpt('topic'),
+    cfg.IntOpt('timeout',
+               default=60,
+               help=_('Timeout in seconds for RPC calls')),
 ]
 
 haproxy_amphora_opts = [
