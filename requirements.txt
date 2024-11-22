@@ -17,7 +17,10 @@ WebOb>=1.8.2 # MIT
 stevedore>=1.20.0 # Apache-2.0
 oslo.config>=6.8.0 # Apache-2.0
 oslo.context>=2.22.0 # Apache-2.0
-oslo.db[mysql]>=8.4.0 # Apache-2.0
+# This was oslo.db[mariadb]>=8.4.0, but that doesn't work with custom oslo.db
+# repo in upper-constraints.txt, so we specify that custom repo again here.
+# This can probably be removed again once Octavia is upgraded.
+oslo.db[mysql] @ git+https://github.com/sapcc/oslo.db.git@stable/yoga-m3 # Apache-2.0
 oslo.i18n>=3.20.0 # Apache-2.0
 oslo.log>=4.3.0 # Apache-2.0
 oslo.messaging>=12.4.0 # Apache-2.0
