@@ -13,3 +13,9 @@ raven
 git+https://github.com/sapcc/openstack-watcher-middleware.git#egg=watcher-middleware
 git+https://github.com/sapcc/openstack-audit-middleware.git@master#egg=audit-middleware
 git+https://github.com/sapcc/openstack-uwsgi-middleware.git@main#egg=uwsgi-middleware
+
+# This was oslo.db[mariadb]>=8.4.0 in requirements.txt, but that doesn't work
+# with custom oslo.db # repo in upper-constraints.txt, so we specify that
+# custom repo again here.  # This can probably be removed again once Octavia is
+# upgraded.
+-e git+https://github.com/sapcc/oslo.db.git@stable/yoga-m3
