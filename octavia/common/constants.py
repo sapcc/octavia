@@ -221,7 +221,8 @@ VALID_LISTENER_POOL_PROTOCOL_MAP = {
     lib_consts.PROTOCOL_PROMETHEUS: []}
 
 L4_ESD_POLICIES = ['proxy_protocol_2edF_v1_0', 'proxy_protocol_V2_e8f6_v1_0',
-                   'standard_tcp_a3de_v1_0', 'ccloud_special_fastl4_noaging']
+                   'standard_tcp_a3de_v1_0', 'ccloud_special_fastl4_noaging',
+                   'ccloud_special_tcp_mirror']
 L4_ESD_UDP_POLICIES = ['proxy_protocol_2edF_v1_0',
                        'proxy_protocol_V2_e8f6_v1_0',
                        'ccloud_special_udp_stateless']
