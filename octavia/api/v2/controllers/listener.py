@@ -334,7 +334,7 @@ class ListenersController(base.BaseController):
             validate.check_alpn_protocols(listener_dict['alpn_protocols'])
 
         validate.check_alpn_protocols_and_listener_protocol_conflicts(
-            listener_dict['alpn_protocols'], _can_tls_offload)
+            listener_dict.get('alpn_protocols', []), _can_tls_offload)
 
         try:
             db_listener = self.repositories.listener.create(
