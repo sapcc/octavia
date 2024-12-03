@@ -332,6 +332,9 @@ class ListenersController(base.BaseController):
             # Validate ALPN protocol list
             validate.check_alpn_protocols(listener_dict['alpn_protocols'])
 
+        validate.check_alpn_protocols_and_listener_protocol_conflicts(
+            listener_dict.get('alpn_protocols', []), _can_tls_offload)
+
         try:
             db_listener = self.repositories.listener.create(
                 lock_session, **listener_dict)
@@ -575,6 +578,9 @@ class ListenersController(base.BaseController):
         if listener.alpn_protocols is not wtypes.Unset:
             # Validate ALPN protocol list
             validate.check_alpn_protocols(listener.alpn_protocols)
+            # Validate ALPN conflicts with listener protocols
+            validate.check_alpn_protocols_and_listener_protocol_conflicts(
+                listener.alpn_protocols, _can_tls_offload)
 
     def _set_default_on_none(self, listener):
         """Reset settings to their default values if None/null was passed in

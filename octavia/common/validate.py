@@ -31,6 +31,7 @@ from octavia.common import constants
 from octavia.common import exceptions
 from octavia.common import utils
 from octavia.i18n import _
+from octavia_lib.common import constants as lib_consts
 
 CONF = cfg.CONF
 
@@ -556,3 +557,14 @@ def check_alpn_protocols(protocols):
     if invalid_protocols:
         raise exceptions.ValidationException(
             detail=_('Invalid ALPN protocol: ' + ', '.join(invalid_protocols)))
+
+
+def check_alpn_protocols_and_listener_protocol_conflicts(alpn,
+                                                         listener_with_tls):
+    if not alpn:
+        return
+
+    if lib_consts.ALPN_PROTOCOL_HTTP_2 in alpn and not listener_with_tls:
+        raise exceptions.ValidationException(
+            detail=_('ALPN protocol "h2" cannot be used with non HTTPs '
+                     'listeners'))
