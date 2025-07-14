@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
+from unittest import mock, skip
 
 from octavia_lib.common import constants as lib_consts
 from oslo_config import cfg
@@ -867,6 +867,7 @@ class TestL7Policy(base.BaseAPITest):
                     'redirect_url': 'http://a.com'}
         self.post(self.L7POLICIES_PATH, self._build_body(l7policy), status=403)
 
+    @skip("CCLOUD does not support PROMETHEUS protocol")
     def test_negative_create_prometheus_listener(self):
         prometheus_listener = self.create_listener(
             lib_consts.PROTOCOL_PROMETHEUS, 8123, lb_id=self.lb_id)

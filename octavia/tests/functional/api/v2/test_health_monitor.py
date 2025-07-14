@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
+from unittest import mock, skip
 
 from oslo_config import cfg
 from oslo_config import fixture as oslo_fixture
@@ -82,6 +82,7 @@ class TestHealthMonitor(base.BaseAPITest):
             group='api_settings',
             udp_connect_min_interval_health_monitor='3')
 
+    @skip("CCloud does not support SCTP protocol")
     def _setup_sctp_lb_resources(self):
         self.sctp_lb = self.create_load_balancer(
             uuidutils.generate_uuid()).get('loadbalancer')

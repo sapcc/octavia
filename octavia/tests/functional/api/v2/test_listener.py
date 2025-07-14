@@ -15,7 +15,7 @@
 
 import copy
 import random
-from unittest import mock
+from unittest import mock, skip
 
 from octavia_lib.common import constants as lib_consts
 from oslo_config import cfg
@@ -1433,6 +1433,7 @@ class TestListener(base.BaseAPITest):
     def test_negative_create_UDP_with_headers(self):
         self._test_negative_create_with_headers(constants.PROTOCOL_UDP)
 
+    @skip("CCloud does not support PROMETHEUS protocol")
     def test_create_prometheus(self):
         self.conf = self.useFixture(oslo_fixture.Config(cfg.CONF))
         self.conf.config(group='api_settings', allow_prometheus_listeners=True)
@@ -1444,6 +1445,7 @@ class TestListener(base.BaseAPITest):
         self.assertEqual(lib_consts.PROTOCOL_PROMETHEUS,
                          get_listener['protocol'])
 
+    @skip("CCloud does not support PROMETHEUS protocol")
     def test_create_prometheus_disabled(self):
         self.conf = self.useFixture(oslo_fixture.Config(cfg.CONF))
         self.conf.config(group='api_settings',

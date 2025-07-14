@@ -108,6 +108,13 @@ class PoolsController(base.BaseController):
         Update database for load balancer and (optional) listener based on
         provisioning status.
         """
+        # Check CCloud exceptions for Pool protocols
+        if (pool_dict['protocol'] in (lib_consts.PROTOCOL_PROXYV2,
+                                      lib_consts.PROTOCOL_SCTP)):
+            raise exceptions.ValidationException(
+                detail=_("%s pool protocol does not "
+                         "support by SAP CCloud") % pool_dict['protocol'])
+
         # Make sure we have a client CA if they specify a CRL
         if (pool_dict.get('crl_container_id') and
                 not pool_dict.get('ca_tls_certificate_id')):
@@ -368,6 +375,13 @@ class PoolsController(base.BaseController):
         return db_pool
 
     def _validate_pool_PUT(self, pool, db_pool):
+
+        # Check CCloud exceptions for Pool protocols
+        if (db_pool.protocol in (lib_consts.PROTOCOL_PROXYV2,
+                                 lib_consts.PROTOCOL_SCTP)):
+            raise exceptions.ValidationException(
+                detail=_("%s pool protocol does not "
+                         "support by SAP CCloud") % db_pool.protocol)
 
         if db_pool.protocol in (constants.PROTOCOL_UDP,
                                 lib_consts.PROTOCOL_SCTP):

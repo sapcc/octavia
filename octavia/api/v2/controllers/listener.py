@@ -201,6 +201,13 @@ class ListenersController(base.BaseController):
             self._validate_insert_headers(
                 listener_dict['insert_headers'].keys(), listener_protocol)
 
+        # Check CCloud exceptions for Listener protocols
+        if (listener_protocol in (lib_consts.PROTOCOL_PROMETHEUS,
+                                  lib_consts.PROTOCOL_SCTP)):
+            raise exceptions.ValidationException(
+                detail=_("%s listener protocol does not "
+                         "support by SAP CCloud") % listener_protocol)
+
         # Check for UDP/SCTP compatibility
         if (listener_protocol in (constants.PROTOCOL_UDP,
                                   lib_consts.PROTOCOL_SCTP) and

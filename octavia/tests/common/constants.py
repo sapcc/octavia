@@ -295,5 +295,4 @@ INVALID_LISTENER_POOL_PROTOCOL_MAP = {
                              constants.PROTOCOL_HTTP,
                              constants.PROTOCOL_HTTPS,
                              constants.PROTOCOL_TERMINATED_HTTPS,
-                             constants.PROTOCOL_PROXY,
-                             lib_constants.PROTOCOL_PROXYV2]}
+                             constants.PROTOCOL_PROXY]}

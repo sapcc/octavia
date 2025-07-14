@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from unittest import mock
+from unittest import mock, skip
 
 from octavia_lib.common import constants as lib_constants
 from oslo_config import cfg
@@ -818,6 +818,7 @@ class TestPool(base.BaseAPITest):
             lb_id=self.lb_id, listener_id=self.listener_id,
             pool_id=api_pool.get('id'))
 
+    @skip("CCloud does not support SCTP protocol")
     def test_create_with_proxy_v2_protocol(self):
         api_pool = self.create_pool(
             self.lb_id,
@@ -1213,6 +1214,7 @@ class TestPool(base.BaseAPITest):
             'project_id': self.project_id}
         self.post(self.POOLS_PATH, self._build_body(lb_pool), status=403)
 
+    @skip("CCloud does not support PROMETHEUS protocol")
     def test_negative_create_prometheus_listener(self):
         stats_listener = self.create_listener(
             lib_constants.PROTOCOL_PROMETHEUS, 8123,
