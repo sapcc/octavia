@@ -132,6 +132,7 @@ def _wrap_app(app):
                 backend_max_connections=CONF.rate_limit.backend_max_connections,
                 backend_timeout_seconds=CONF.rate_limit.backend_timeout_seconds
             )
+            LOG.debug(f"DEBUG WSGI: {app.config}, {app.service_type}, {app.cadf_service_name}")
         except (EnvironmentError, OSError,
                 rate_limit_errors.ConfigError) as e:
             raise exceptions.InputFileError(
