@@ -115,6 +115,8 @@ def _wrap_app(app):
             )
 
     # sapcc/openstack-rate-limit-middleware
+    # rate-limit uses variables from watcher, so it should be running after
+    # watcher middleware, it means here it should be earlier
     if rate_limit_errors and rate_limit_middleware and CONF.rate_limit.enabled:
         LOG.info("openstack-rate-limit-middleware activated")
         try:
