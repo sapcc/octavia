@@ -38,6 +38,7 @@ class ConsumerService(cotyledon.Service):
         self.endpoints = []
         self.access_policy = dispatcher.DefaultRPCAccessPolicy
         self.message_listener = None
+        self.notification_listener = None
 
     def run(self):
         LOG.info('Starting V2 consumer...')
@@ -50,6 +51,14 @@ class ConsumerService(cotyledon.Service):
             access_policy=self.access_policy
         )
         self.message_listener.start()
+
+        LOG.info('Starting Notification Listener...')
+        self.notification_listener = rpc.get_notification_listener(
+            targets=[messaging.Target(topic='notifications')],
+            endpoints=[endpoints.NotificationEndpoints()]
+        )
+        self.notification_listener.start()
+
         if CONF.task_flow.jobboard_enabled:
             for e in self.endpoints:
                 e.worker.services_controller.run_conductor(
@@ -63,6 +72,10 @@ class ConsumerService(cotyledon.Service):
             LOG.info('V2 Consumer successfully stopped.  Waiting for '
                      'final messages to be processed...')
             self.message_listener.wait()
+        if self.notification_listener:
+            LOG.info('Stopping Notification Listener...')
+            self.notification_listener.stop()
+            LOG.info('Notification listener successfully stopped.')
         if self.endpoints:
             LOG.info('Shutting down V2 endpoint worker executors...')
             for e in self.endpoints:
