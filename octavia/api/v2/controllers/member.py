@@ -557,7 +557,7 @@ class AllMembersController(MembersController):
                 pool_model.provisioning_status != constants.DELETED
                 ).distinct().all()
 
-            # check that at an LB has been found
+            # check that an LB has been found
             if len(lb_ids) < 1:
                 exc = exceptions.NotFound()
                 exc.msg = "No load balancer found for the provided pools."
