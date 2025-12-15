@@ -377,10 +377,12 @@ class MembersController(MemberController):
     def __init__(self, pool_id):
         super().__init__(pool_id)
 
-    @wsme_pecan.wsexpose(None, wtypes.text,
-                         body=member_types.MembersRootPUT, status_code=202)
-    def put(self, additive_only=False, members_=None):
-        """Updates all members."""
+    def _put(self, additive_only=False, members_=None, dispatch_driver=True):
+        """Inner put method used by both MembersController.put and
+        AllMembersController.put. This is needed due to the dispatch_driver
+        argument, which is not supposed to be exposed to the API. Therefore,
+        this function cannot be annotated with wsexpose.
+        """
         members = members_.members
         additive_only = strutils.bool_from_string(additive_only)
         context = pecan_request.context.get('octavia_context')
@@ -517,9 +519,101 @@ class MembersController(MemberController):
                         context.session, m.id,
                         provisioning_status=constants.PENDING_DELETE)
 
-            # Dispatch to the driver
+        # Dispatch to the driver
+        if dispatch_driver:
             LOG.info("Sending Pool %s batch member update to provider %s",
                      db_pool.id, driver.name)
             driver_utils.call_provider(
                 driver.name, driver.member_batch_update, db_pool.id,
                 provider_members)
+
+    @wsme_pecan.wsexpose(None, wtypes.text,
+                         body=member_types.MembersRootPUT, status_code=202)
+    def put(self, additive_only=False, members_=None):
+        """Updates all members of a pool."""
+        self._put(additive_only=additive_only, members_=members_, dispatch_driver=True)
+
+
+class AllMembersController(MembersController):
+
+    def __init__(self):
+        super().__init__(None)
+
+    @wsme_pecan.wsexpose(None, wtypes.text,
+                         body=member_types.CrossPoolMembersRootPUT, status_code=202)
+    def put(self, additive_only=False, members_=None):
+        """Updates all members across several pools."""
+        members = members_.members
+        context = pecan_request.context.get('octavia_context')
+        with context.session.begin():
+
+            # get the pools from the DB
+            pool_ids = set(m.pool_id for m in members)
+            # we cannot use self.repositories.pool.get_all, since it doesn't
+            # support filtering by multiple values (id='...' or id='...').
+            pool_model = self.repositories.pool.model_class
+            lb_ids = context.session.query(pool_model.load_balancer_id).filter(
+                pool_model.id.in_(pool_ids),
+                pool_model.provisioning_status != constants.DELETED
+                ).distinct().all()
+
+            # check that an LB has been found
+            if len(lb_ids) < 1:
+                exc = exceptions.NotFound()
+                exc.msg = "No load balancer found for the provided pools."
+                raise exc
+
+            # check that the pools belong to one single LB and get its ID
+            if len(lb_ids) > 1:
+                raise exceptions.InvalidFilterArgument()
+            # ID is the first element of the first tuple
+            lb_id = lb_ids[0][0]
+
+            # baseline LB data for provider update call
+            db_lb = self._get_db_lb(context.session, lb_id, show_deleted=False)
+            old_provider_lb = (
+                driver_utils.db_loadbalancer_to_provider_loadbalancer(
+                    db_lb, for_delete=True))
+
+        # call MembersController._put for each pool.
+        some_pools_updated = False
+        for pool_id in pool_ids:
+
+            # since _put sets the pool's LB to PENDING_UPDATE, we need to
+            # reset it for the next pool, if we already updated a pool.
+            if some_pools_updated:
+                with context.session.begin():
+                    self.repositories.load_balancer.update(
+                        context.session, lb_id,
+                        provisioning_status=constants.ACTIVE)
+
+            # prepare body for regular batch member update
+            body = member_types.MembersRootPUT()
+            # Each element of the members list is a CrossPoolMemberPUT
+            # instance, which inherits from MemberPOST. The MembersController
+            # expects MemberPOST, so this works fine.
+            body.members = [m for m in members if m.pool_id == pool_id]
+
+            # run regular batch member update for this pool
+            # No need to instantiate the superclass, just call its __init__
+            # method (note that this sets self.pool_id)
+            super().__init__(pool_id)
+            super()._put(additive_only=additive_only, members_=body,
+                         dispatch_driver=False)
+            some_pools_updated = True
+
+        # updated LB data for provider update call
+        with context.session.begin():
+            db_lb = self._get_db_lb(context.session, lb_id, show_deleted=False)
+            new_provider_lb = (
+                driver_utils.db_loadbalancer_to_provider_loadbalancer(
+                    db_lb, for_delete=True))
+
+        # Dispatch to the provider
+        _, provider = self._get_lb_project_id_provider(context.session, lb_id)
+        driver = driver_factory.get_driver(provider)
+        LOG.info("Sending cross-pool batch member load balancer update to provider %s",
+                 driver.name)
+        driver_utils.call_provider(
+            driver.name, driver.loadbalancer_update,
+            old_provider_lb, new_provider_lb)
