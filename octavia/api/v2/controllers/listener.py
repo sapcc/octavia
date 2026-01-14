@@ -112,6 +112,26 @@ class ListenersController(base.BaseController):
                 raise exceptions.ImmutableObject(resource=db_lb._name(),
                                                  id=lb_id)
 
+    def _validate_allports_listeners(self, db_listener):
+        """If the listener listens on all ports (that is, it's port is set to 0), check that there is not already
+        another listener defined on the load balancer. Else, check that no other listener has it's port set to 0. """
+
+        # If listener creation happened to be fast enough before this method was called, the listener we're checking
+        # right now might end up already existing in the argument. Therefore we need to filter it out,
+        # else the validation fails if this listener is all-ports.
+        existing_listeners = [li for li in db_listener.load_balancer.listeners if li.id != db_listener.id]
+
+        # if there are no listeners yet we don't have a problem
+        if len(existing_listeners) == 0:
+            return
+
+        if db_listener.protocol_port == 0:
+            raise exceptions.ValidationException(
+                detail=_("Cannot create listener for all ports: Other listeners exist"))
+        if any(listener.protocol_port == 0 for listener in existing_listeners):
+            raise exceptions.ValidationException(
+                detail=_("Cannot create listener: A listener for all ports exists"))
+
     def _validate_pool(self, session, lb_id, pool_id, listener_protocol):
         """Validate pool given exists on same load balancer as listener."""
         db_pool = self.repositories.pool.get(
@@ -338,6 +358,7 @@ class ListenersController(base.BaseController):
         try:
             db_listener = self.repositories.listener.create(
                 lock_session, **listener_dict)
+            self._validate_allports_listeners(db_listener)
             if sni_containers:
                 for container in sni_containers:
                     sni_dict = {'listener_id': db_listener.id,

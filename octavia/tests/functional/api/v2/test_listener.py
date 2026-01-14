@@ -2109,6 +2109,23 @@ class TestListener(base.BaseAPITest):
         body = self._build_body(listener2_post)
         self.post(self.LISTENERS_PATH, body, status=201)
 
+    def test_create_allports_listener(self):
+        listener_post = {'protocol': constants.PROTOCOL_TCP,
+                         'protocol_port': 0,
+                         'loadbalancer_id': self.lb_id}
+        body = self._build_body(listener_post)
+        self.post(self.LISTENERS_PATH, body, status=201)
+
+    def test_create_allports_listener_multiple(self):
+        listener1 = self.create_listener(constants.PROTOCOL_TCP, 80,
+                                         self.lb_id)
+        self.set_lb_status(self.lb_id)
+        listener2_post = {'protocol': constants.PROTOCOL_TCP,
+                         'protocol_port': 0,
+                         'loadbalancer_id': self.lb_id}
+        body = self._build_body(listener2_post)
+        self.post(self.LISTENERS_PATH, body, status=400)
+
     def test_delete(self):
         listener = self.create_listener(constants.PROTOCOL_HTTP, 80,
                                         self.lb_id)

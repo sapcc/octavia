@@ -244,6 +244,7 @@ ONLY_ESD_L7POLICY_PROTO = [PROTOCOL_TCP, PROTOCOL_HTTPS]
 
 # API Integer Ranges
 MIN_PORT_NUMBER = 1
+MIN_PORT_NUMBER_LISTENER = 0  # A value of 0 means the listener receives on all ports. This is a F5 extension.
 MAX_PORT_NUMBER = 65535
 
 DEFAULT_CONNECTION_LIMIT = -1

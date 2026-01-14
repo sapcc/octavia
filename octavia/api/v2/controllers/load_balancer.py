@@ -630,6 +630,9 @@ class LoadBalancersController(base.BaseController):
             raise exceptions.QuotaException(
                 resource=data_models.Listener._name())
 
+        # Check that listeners don't conflict with each other
+        self._validate_internal_listener_conflicts(listeners)
+
         # Now create all of the listeners
         new_lists = []
         for li in listeners:
@@ -771,6 +774,13 @@ class LoadBalancersController(base.BaseController):
             elif controller == 'reschedule':
                 return ReschedulingController(lb_id=id), remainder
         return None
+
+    def _validate_internal_listener_conflicts(self, listeners):
+        """A load balancer must not have more than one all-ports listeners. If there are two or more listeners and
+        one of them is an all-ports listener, throw an error. """
+        if len(listeners) >= 2 and any(li['protocol_port'] == 0 for li in listeners):
+            raise exceptions.ValidationException(detail=_("Cannot create more than one listener: At least one "
+                                                          "all-ports listener was specified"))
 
 
 class StatusController(base.BaseController):
