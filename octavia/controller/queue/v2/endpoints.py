@@ -188,19 +188,17 @@ class Endpoints:
         self.worker.delete_amphora(amphora_id)
 
 
-class NotificationEndpoints(object):
+class NetworkingF5NotificationsEndpoint(object):
 
     filter_rule = messaging.NotificationFilter(
         publisher_id='^networking_f5.*')
 
     def __init__(self):
-        # self.plugin = stevedore_driver.DriverManager(
-        #     namespace='octavia.plugins.notifications',
-        #     name=CONF.octavia_plugins,
-        #     invoke_on_load=True
-        # ).driver
-        from octavia_f5.controller.worker.controller_worker import ControllerWorkerNotifications
-        self.plugin = ControllerWorkerNotifications()
+        self.plugin = stevedore_driver.DriverManager(
+            namespace='octavia.plugins.notifications',
+            name=CONF.octavia_plugins,
+            invoke_on_load=True
+        ).driver
 
     def info(self, ctxt, publisher_id, event_type, payload, metadata):
         LOG.debug("Got notification from publisher %s with event %s and payload %s",

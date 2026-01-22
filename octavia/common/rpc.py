@@ -77,8 +77,7 @@ def create_transport(url):
 
 
 def get_notification_listener(targets, endpoints, serializer=None):
-    if NOTIFICATION_TRANSPORT is None:
-        raise AssertionError("'NOTIFICATION_TRANSPORT' must not be None")
+    assert NOTIFICATION_TRANSPORT, "NOTIFICATION_TRANSPORT must not be None"
     if serializer is None:
         serializer = messaging.NoOpSerializer()
     return messaging.get_notification_listener(

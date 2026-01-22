@@ -55,7 +55,7 @@ class ConsumerService(cotyledon.Service):
         LOG.info('Starting Notification Listener...')
         self.notification_listener = rpc.get_notification_listener(
             targets=[messaging.Target(topic='notifications')],
-            endpoints=[endpoints.NotificationEndpoints()]
+            endpoints=[endpoints.NetworkingF5NotificationsEndpoint()]
         )
         self.notification_listener.start()
 
