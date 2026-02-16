@@ -186,3 +186,23 @@ class Endpoints:
     def delete_amphora(self, context, amphora_id):
         LOG.info('Deleting amphora \'%s\'...', amphora_id)
         self.worker.delete_amphora(amphora_id)
+
+
+class NetworkingF5NotificationsEndpoint(object):
+
+    filter_rule = messaging.NotificationFilter(
+        publisher_id='^networking_f5.*')
+
+    def __init__(self):
+        self.plugin = stevedore_driver.DriverManager(
+            namespace='octavia.plugins.notifications',
+            name=CONF.octavia_plugins,
+            invoke_on_load=True
+        ).driver
+
+    def info(self, ctxt, publisher_id, event_type, payload, metadata):
+        LOG.debug("Got notification from publisher %s with event %s and payload %s",
+                  publisher_id, event_type, payload)
+        _, action = event_type.split('.')
+        self.plugin.process_security_group_update_notification(
+            security_group_id=payload['security_group_id'], action=action)

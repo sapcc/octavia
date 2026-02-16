@@ -31,10 +31,11 @@ class TestConsumer(base.TestRpc):
         conf.config(host='test-hostname')
         self.conf = conf.conf
 
+    @mock.patch('stevedore.driver.DriverManager', return_value=mock.MagicMock())
     @mock.patch.object(messaging, 'Target')
     @mock.patch.object(endpoints, 'Endpoints')
     @mock.patch.object(messaging, 'get_rpc_server')
-    def test_consumer_run(self, mock_rpc_server, mock_endpoint, mock_target):
+    def test_consumer_run(self, mock_rpc_server, mock_endpoint, mock_target, mock_driver):
         mock_rpc_server_rv = mock.Mock()
         mock_rpc_server.return_value = mock_rpc_server_rv
         mock_endpoint_rv = mock.Mock()
@@ -44,14 +45,16 @@ class TestConsumer(base.TestRpc):
 
         consumer.ConsumerService(1, self.conf).run()
 
-        mock_target.assert_called_once_with(topic=constants.TOPIC_AMPHORA_V2,
-                                            server='test-hostname',
-                                            fanout=False)
+        calls = [mock.call(topic='octavia_provisioning_v2', server='test-hostname', fanout=False),
+                 mock.call(topic='notifications')]
+        self.assertEqual(calls[0], mock_target.mock_calls[0])
+        self.assertEqual(calls[1], mock_target.mock_calls[1])
         mock_endpoint.assert_called_once_with()
 
+    @mock.patch('stevedore.driver.DriverManager', return_value=mock.MagicMock())
     @mock.patch.object(messaging, 'get_rpc_server')
     @mock.patch.object(endpoints, 'Endpoints')
-    def test_consumer_terminate(self, mock_endpoint, mock_rpc_server):
+    def test_consumer_terminate(self, mock_endpoint, mock_rpc_server, mock_driver):
         mock_rpc_server_rv = mock.Mock()
         mock_rpc_server.return_value = mock_rpc_server_rv
 

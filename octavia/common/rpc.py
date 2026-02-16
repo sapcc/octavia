@@ -74,3 +74,15 @@ def get_notifier(service=None, host=None, publisher_id=None):
 
 def create_transport(url):
     return messaging.get_rpc_transport(cfg.CONF, url=url)
+
+
+def get_notification_listener(targets, endpoints, serializer=None):
+    assert NOTIFICATION_TRANSPORT, "NOTIFICATION_TRANSPORT must not be None"
+    if serializer is None:
+        serializer = messaging.NoOpSerializer()
+    return messaging.get_notification_listener(
+        NOTIFICATION_TRANSPORT,
+        targets,
+        endpoints,
+        serializer=serializer
+    )
