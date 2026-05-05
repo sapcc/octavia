@@ -459,7 +459,6 @@ class Repositories:
         quotas = (session.query(models.Quotas)
                     .filter_by(project_id=project_id)
                     .populate_existing()
-                    .with_for_update()
                     .first())
         if _class == data_models.LoadBalancer:
             # Decide which quota to use
