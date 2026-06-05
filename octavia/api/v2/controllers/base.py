@@ -25,6 +25,7 @@ from octavia.common import constants
 from octavia.common import data_models
 from octavia.common import exceptions
 from octavia.common import policy
+from octavia.db import models
 from octavia.db import repositories
 from octavia.i18n import _
 
@@ -226,23 +227,98 @@ class BaseController(pecan_rest.RestController):
         return db_quotas
 
     def _get_db_quota_usage(self, session, project_id):
-        """Gets the project's quota usage from the database."""
-        # TODO(Vadim Ponomarev): use stored quota usage in database instead
-        # counting when we will fix quota counting inside f5 amphora driver.
-        loadbalancer = self.repositories.load_balancer.count(
-            session, project_id=project_id, show_deleted=False)
-        listener = self.repositories.listener.count(
-            session, project_id=project_id, show_deleted=False)
-        pool = self.repositories.pool.count(
-            session, project_id=project_id, show_deleted=False)
-        member = self.repositories.member.count(
-            session, project_id=project_id, show_deleted=False)
-        l7policy = self.repositories.l7policy.count(
-            session, project_id=project_id, show_deleted=False)
-        l7rule = self.repositories.l7rule.count(
-            session, project_id=project_id, show_deleted=False)
-        healthmonitor = self.repositories.health_monitor.count(
-            session, project_id=project_id, show_deleted=False)
+        """Gets the project's quota usage from the database.
+        First checks the database to see whether objects have already been
+        counted, and if not, recounts and updates usage in the database."""
+
+        # At this point project_id should not ever be None or Unset
+        quotas = self.repositories.quotas.get(session, project_id=project_id)
+
+        loadbalancer = None
+        listener = None
+        pool = None
+        member = None
+        l7policy = None
+        l7rule = None
+        healthmonitor = None
+
+        # if a quota row exists, look up whether loadbalancer usage is tracked
+        if quotas:
+            loadbalancer = quotas.in_use_load_balancer
+        # if the quota row doesn't exist or usage isn't tracked yet, do a recount
+        if not quotas or loadbalancer is None:
+            loadbalancer = self.repositories.load_balancer.count(
+                    session, project_id=project_id, show_deleted=False)
+            # if a quota row exists, write back the recount result
+            if quotas:
+                quotas.in_use_load_balancer = loadbalancer
+
+        # if a quota row exists, look up whether listener usage is tracked
+        if quotas:
+            listener = quotas.in_use_listener
+        # if the quota row doesn't exist or usage isn't tracked yet, do a recount
+        if not quotas or listener is None:
+            listener = self.repositories.listener.count(
+                    session, project_id=project_id, show_deleted=False)
+            # if a quota row exists, write back the recount result
+            if quotas:
+                quotas.in_use_listener = listener
+
+        # if a quota row exists, look up whether pool usage is tracked
+        if quotas:
+            pool = quotas.in_use_pool
+        # if the quota row doesn't exist or usage isn't tracked yet, do a recount
+        if not quotas or pool is None:
+            pool = self.repositories.pool.count(
+                    session, project_id=project_id, show_deleted=False)
+            # if a quota row exists, write back the recount result
+            if quotas:
+                quotas.in_use_pool = pool
+
+        # if a quota row exists, look up whether member usage is tracked
+        if quotas:
+            member = quotas.in_use_member
+        # if the quota row doesn't exist or usage isn't tracked yet, do a recount
+        if not quotas or member is None:
+            member = self.repositories.member.count(
+                    session, project_id=project_id, show_deleted=False)
+            # if a quota row exists, write back the recount result
+            if quotas:
+                quotas.in_use_member = member
+
+        # if a quota row exists, look up whether l7policy usage is tracked
+        if quotas:
+            l7policy = quotas.in_use_l7policy
+        # if the quota row doesn't exist or usage isn't tracked yet, do a recount
+        if not quotas or l7policy is None:
+            l7policy = self.repositories.l7policy.count(
+                    session, project_id=project_id, show_deleted=False)
+            # if a quota row exists, write back the recount result
+            if quotas:
+                quotas.in_use_l7policy = l7policy
+
+        # if a quota row exists, look up whether l7rule usage is tracked
+        if quotas:
+            l7rule = quotas.in_use_l7rule
+        # if the quota row doesn't exist or usage isn't tracked yet, do a recount
+        if not quotas or l7rule is None:
+            l7rule = self.repositories.l7rule.count(
+                    session, project_id=project_id, show_deleted=False)
+            # if a quota row exists, write back the recount result
+            if quotas:
+                quotas.in_use_l7rule = l7rule
+
+        # if a quota row exists, look up whether healthmonitor usage is tracked
+        if quotas:
+            healthmonitor = quotas.in_use_health_monitor
+        # if the quota row doesn't exist or usage isn't tracked yet, do a recount
+        if not quotas or healthmonitor is None:
+            healthmonitor = self.repositories.health_monitor.count(
+                    session, project_id=project_id, show_deleted=False)
+            # if a quota row exists, write back the recount result
+            if quotas:
+                quotas.in_use_health_monitor = healthmonitor
+
         return data_models.QuotaUsage(
             loadbalancer=loadbalancer,
             listener=listener,
