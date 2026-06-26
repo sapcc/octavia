@@ -232,7 +232,10 @@ class BaseController(pecan_rest.RestController):
         counted, and if not, recounts and updates usage in the database."""
 
         # At this point project_id should not ever be None or Unset
-        quotas = self.repositories.quotas.get(session, project_id=project_id)
+        quotas = (session.query(models.Quotas)
+                        .filter_by(project_id=project_id)
+                        .populate_existing()
+                        .first())
 
         loadbalancer = None
         listener = None
