@@ -78,6 +78,10 @@ api_opts = [
                 help=_("Allow users to create PING type Health Monitors?")),
     cfg.BoolOpt('allow_prometheus_listeners', default=True,
                 help=_("Allow users to create PROMETHEUS type listeners?")),
+    cfg.BoolOpt('allow_cross_pool_batch_members_update', default=True,
+                help=_("Allow users to use the cross-pool batch member update "
+                       "(CPBMU) endpoint. When set to False, PUT /v2/pools/members "
+                       "returns 404.")),
     cfg.DictOpt('enabled_provider_drivers',
                 help=_('A comma separated list of dictionaries of the '
                        'enabled provider driver names and descriptions. '
