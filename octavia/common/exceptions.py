@@ -74,6 +74,13 @@ class NotFound(APIException):
     code = 404
 
 
+class CPBMUNotFound(APIException):
+    msg = _('The experimental cross-pool batch member update endpoint has been' \
+            ' disabled. Please dont use it. Set' \
+            ' loadbalancer.openstack.org/batch-pools-members-update to false.')
+    code = 404
+
+
 class PolicyForbidden(APIException):
     msg = _("Policy does not allow this request to be performed.")
     code = 403
