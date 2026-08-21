@@ -146,6 +146,12 @@ class Endpoints:
         self.worker.batch_update_members(
             old_members, new_members, updated_members)
 
+    def batch_update_members_all_pools(self, context, loadbalancer):
+        LOG.info(
+            'Batch updating members of all pools on load balancer %s',
+            loadbalancer['loadbalancer_id'])
+        self.worker.batch_update_members_all_pools(loadbalancer)
+
     def delete_member(self, context, member):
         LOG.info('Deleting member \'%s\'...', member.get(constants.MEMBER_ID))
         self.worker.delete_member(member)
