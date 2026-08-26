@@ -535,6 +535,14 @@ class CrossPoolMembersController(MembersController):
                                                 load_balancer_id, pool_ids):
         """Verify load balancer is in a mutable state and set status."""
 
+        class NotFound(exceptions.APIException):
+            """More generic version of exceptions.NotFound with arbitrary
+            message"""
+            code = 404
+            def __init__(self, msg):
+                self.msg = msg
+                super().__init__(detail=self.msg)
+
         pool_model = self.repositories.pool.model_class
         pools = session.query(pool_model).filter(
             pool_model.id.in_(pool_ids)).all()
@@ -544,9 +552,7 @@ class CrossPoolMembersController(MembersController):
             found_pool_ids = [p.id for p in pools]
             missing_pools = filter(lambda pool_id: pool_id not in
                                    found_pool_ids, pool_ids)
-            exc = exceptions.NotFound()
-            exc.msg = f"Pools not found: {' '.join(missing_pools)}"
-            raise exc
+            raise NotFound(f"Pools not found: {' '.join(missing_pools)}")
 
         # set LB and listeners provisioning statuses
         listener_ids = [l.id for p in pools for l in p.listeners]
@@ -582,9 +588,7 @@ class CrossPoolMembersController(MembersController):
 
         # check that an LB has been found
         if len(lb_ids) < 1:
-            exc = exceptions.NotFound()
-            exc.msg = "No load balancer found for the provided pools."
-            raise exc
+            raise NotFound("No load balancer found for the provided pools.")
 
         # check that the pools belong to one single LB and get its ID
         if len(lb_ids) > 1:
