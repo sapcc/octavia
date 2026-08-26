@@ -667,13 +667,6 @@ class CrossPoolMembersController(MembersController):
                 if (m.pool_id, m.ip_address, m.protocol_port) not in new_member_uniques:
                     deleted_members.append(m)
 
-            # check whether update is a NOOP
-            if not (deleted_members or new_members or updated_members):
-                LOG.info("Cross-pool member batch update is a noop, rolling "
-                         "back and returning early.")
-                context.session.rollback()
-                return
-
             # check quota
             if additive_only:
                 member_count_diff = len(new_members)
