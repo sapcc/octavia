@@ -150,8 +150,9 @@ class MemberController(base.BaseController):
         validate.ip_not_reserved(member.address)
 
         # Validate member subnet
-        """ CCloud: disable subnet validation since it's not used by the f5 backend driver and just impose
-             a risk of failure due to failed keystone / neutron calls """
+        """ CCloud: Disable subnet validation since it's not used by the f5
+            backend driver and just imposes a risk of failure due to possibly
+            failing keystone/neutron calls """
         #if (member.subnet_id and
         #        not validate.subnet_exists(member.subnet_id, context=context)):
         #    raise exceptions.NotFound(resource='Subnet', id=member.subnet_id)
@@ -686,29 +687,12 @@ class CrossPoolMembersController(MembersController):
 
             # Do the actual updating
 
-            provider_members = []
-            valid_subnets = set()
-
             # Create new members
+            # NOTE: CCloud: Not validating subnets (not used by F5 provider
+            #       driver, so don't risk failing API calls. Same as in
+            #       MemberController.post)
+            provider_members = []
             for m in new_members:
-                # NOTE(mnaser): In order to avoid hitting the Neutron API hard
-                #               when creating many new members, we cache the
-                #               validation results. We also validate new
-                #               members only since subnet ID is immutable.
-                # If the member doesn't have a subnet, or the subnet is
-                # already valid, move on. Run validate and add it to
-                # cache otherwise.
-                if m.subnet_id and m.subnet_id not in valid_subnets:
-                    # If the subnet does not exist,
-                    # raise an exception and get out.
-                    if not validate.subnet_exists(
-                            m.subnet_id, context=context):
-                        raise exceptions.NotFound(
-                            resource='Subnet', id=m.subnet_id)
-
-                    # Mark the subnet as valid for future runs.
-                    valid_subnets.add(m.subnet_id)
-
                 m = m.to_dict(render_unsets=False)
                 m['project_id'] = project_id
                 created_member = self._graph_create(context.session, m)
