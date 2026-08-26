@@ -531,15 +531,32 @@ class CrossPoolMembersController(MembersController):
     def __init__(self):
         super().__init__(None)
 
-    def _test_lb_and_listener_and_pool_statuses(self, session, load_balancer_id):
-        """Verify load balancer is in a mutable state."""
+    def _test_lb_and_listener_and_pool_statuses(self, session,
+                                                load_balancer_id, pool_ids):
+        """Verify load balancer is in a mutable state and set status."""
+
+        pool_model = self.repositories.pool.model_class
+        pools = session.query(pool_model).filter(
+            pool_model.id.in_(pool_ids)).all()
+        listener_ids = [l.id for p in pools for l in p.listeners]
+
+        # set LB and listeners provisioning statuses
         if not self.repositories.test_and_set_lb_and_listeners_prov_status(
                 session, load_balancer_id,
-                constants.PENDING_UPDATE, constants.PENDING_UPDATE):
+                constants.PENDING_UPDATE, constants.PENDING_UPDATE,
+                listener_ids=listener_ids):
             LOG.info("Members cannot be created or modified because the "
                      "Load Balancer is in an immutable state")
             raise exceptions.ImmutableObject(resource='Load Balancer',
                                              id=load_balancer_id)
+
+        # set pool provisioning statuses (already guarded by LB row lock)
+        for pool in pools:
+            if pool.provisioning_status not in constants.MUTABLE_STATUSES:
+                raise exceptions.ImmutableObject(resource='Pool', id=pool.id)
+            self.repositories.pool.update(
+                session, pool.id,
+                provisioning_status=constants.PENDING_UPDATE)
 
     def _get_lb_for_pools(self, context, pool_ids):
         """Check that the pools belong to exactly LB and return it.
@@ -595,7 +612,7 @@ class CrossPoolMembersController(MembersController):
         driver = driver_factory.get_driver(provider)
 
         with context.session.begin():
-            self._test_lb_and_listener_and_pool_statuses(context.session, lb_id)
+            self._test_lb_and_listener_and_pool_statuses(context.session, lb_id, pool_ids)
 
             # we cannot use self.repositories.pool.get_all, since it doesn't
             # support filtering by multiple values (`id='foo' or id='bar'`).
