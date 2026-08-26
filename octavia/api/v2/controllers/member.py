@@ -538,9 +538,18 @@ class CrossPoolMembersController(MembersController):
         pool_model = self.repositories.pool.model_class
         pools = session.query(pool_model).filter(
             pool_model.id.in_(pool_ids)).all()
-        listener_ids = [l.id for p in pools for l in p.listeners]
+
+        # check that all specified pools were found
+        if len(pools) < len(pool_ids):
+            found_pool_ids = [p.id for p in pools]
+            missing_pools = filter(lambda pool_id: pool_id not in
+                                   found_pool_ids, pool_ids)
+            exc = exceptions.NotFound()
+            exc.msg = f"Pools not found: {' '.join(missing_pools)}"
+            raise exc
 
         # set LB and listeners provisioning statuses
+        listener_ids = [l.id for p in pools for l in p.listeners]
         if not self.repositories.test_and_set_lb_and_listeners_prov_status(
                 session, load_balancer_id,
                 constants.PENDING_UPDATE, constants.PENDING_UPDATE,
