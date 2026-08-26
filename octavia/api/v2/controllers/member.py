@@ -233,6 +233,7 @@ class MemberController(base.BaseController):
 
     def _graph_create(self, lock_session, member_dict):
         pool_id = member_dict.get('pool_id', self.pool_id)
+        LOG.warning(f"FOOBARBAZ: _graph_create: pool_id=={pool_id}")
         pool = self.repositories.pool.get(lock_session, id=pool_id)
 
         # Validate and store port SR-IOV vnic_type
@@ -442,6 +443,12 @@ class MembersController(MemberController):
                 if (m.ip_address, m.protocol_port) not in new_member_uniques:
                     deleted_members.append(m)
 
+            # FIXME (upstream) this is unreachable. In the new/updated members
+            #       code above, one of the two if-branches taken for every
+            #       member specified in the request; Either it's added to
+            #       new_members or to updated_members. The only possibility for
+            #       both to be empty is when no members are specified in the
+            #       request to begin with. But then deleted_members is set.
             if not (deleted_members or new_members or updated_members):
                 LOG.info("Member batch update is a noop, rolling back and "
                          "returning early.")
@@ -553,10 +560,13 @@ class CrossPoolMembersController(MembersController):
             found_pool_ids = [p.id for p in pools]
             missing_pools = filter(lambda pool_id: pool_id not in
                                    found_pool_ids, pool_ids)
+            LOG.warning(f"FOOBARBAZ _test_lb_and_listener_and_pool_statuses: missing_pools=={missing_pools}")
             raise NotFound(f"Pools not found: {' '.join(missing_pools)}")
 
         # set LB and listeners provisioning statuses
+        LOG.warning(f"FOOBARBAZ _test_lb_and_listener_and_pool_statuses: pools=={pools}")
         listener_ids = [l.id for p in pools for l in p.listeners]
+        LOG.warning(f"FOOBARBAZ _test_lb_and_listener_and_pool_statuses: listener_ids=={listener_ids}")
         if not self.repositories.test_and_set_lb_and_listeners_prov_status(
                 session, load_balancer_id,
                 constants.PENDING_UPDATE, constants.PENDING_UPDATE,
@@ -570,6 +580,7 @@ class CrossPoolMembersController(MembersController):
         for pool in pools:
             if pool.provisioning_status not in constants.MUTABLE_STATUSES:
                 raise exceptions.ImmutableObject(resource='Pool', id=pool.id)
+            LOG.warning(f"FOOBARBAZ setting pool {pool.id} to PENDING_UPDATE")
             self.repositories.pool.update(
                 session, pool.id,
                 provisioning_status=constants.PENDING_UPDATE)
@@ -586,6 +597,7 @@ class CrossPoolMembersController(MembersController):
             pool_model.id.in_(pool_ids),
             pool_model.provisioning_status != constants.DELETED
             ).distinct().all()
+        LOG.warning(f"FOOBARBAZ: _get_lb_for_pool: lb_ids=={lb_ids}")
 
         # check that an LB has been found
         if len(lb_ids) < 1:
@@ -608,12 +620,16 @@ class CrossPoolMembersController(MembersController):
         additive_only = strutils.bool_from_string(additive_only)
         context = pecan_request.context.get('octavia_context')
         pool_ids = set(m.pool_id for m in members)
+        LOG.warning(f"FOOBARBAZ: members=={members} additive_only=={additive_only} context=={context} pool_ids=={pool_ids}")
 
         # get baseline LB data for provider update call
         with context.session.begin():
             lb_id = self._get_lb_for_pools(context, pool_ids)
+            LOG.warning(f"FOOBARBAZ: lb_id=={lb_id}")
             db_lb = self._get_db_lb(context.session, lb_id, show_deleted=False)
+            LOG.warning(f"FOOBARBAZ: db_lb=={db_lb}")
             project_id, provider = db_lb.project_id, db_lb.provider
+            LOG.warning(f"FOOBARBAZ: project_id=={project_id} provider=={provider}")
 
         # Check POST+PUT+DELETE since this operation is all of 'CUD'
         self._auth_validate_action(context, project_id, constants.RBAC_POST)
@@ -725,6 +741,12 @@ class CrossPoolMembersController(MembersController):
                         provisioning_status=constants.PENDING_DELETE)
 
             # Dispatch to the driver
+            # TODO why does dispatch happen within the TX? Same for BMU. And
+            #      all other endpoints in this controller, apparently. What about
+            #      other controllers?
+            # TODO shit, we need an appropriate endpoint, don't we. Does that
+            #      mean I have to implement it in the amphora driver...?? Ask
+            #      upstream first
             LOG.info("Sending cross-pool batch member update to provider %s",
                      driver.name)
             provider_loadbalancer = driver_utils.db_loadbalancer_to_provider_loadbalancer(db_lb)
