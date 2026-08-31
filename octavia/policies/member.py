@@ -49,6 +49,12 @@ rules = [
         [{'method': 'DELETE',
           'path': '/v2/lbaas/pools/{pool_id}/members/{member_id}'}]
     ),
+    policy.DocumentedRuleDefault(
+        f'{constants.RBAC_MEMBER}{constants.RBAC_PUT_CROSS_POOL_MEMBERS}',
+        constants.RULE_API_ADMIN,
+        "Batch update members across pools",
+        [{'method': 'PUT', 'path': '/v2/lbaas/pools/members'}]
+    ),
 ]
 
 
