@@ -150,8 +150,9 @@ class MemberController(base.BaseController):
         validate.ip_not_reserved(member.address)
 
         # Validate member subnet
-        """ CCloud: disable subnet validation since it's not used by the f5 backend driver and just impose
-             a risk of failure due to failed keystone / neutron calls """
+        """ CCloud: Disable subnet validation since it's not used by the f5
+            backend driver and just imposes a risk of failure due to possibly
+            failing keystone/neutron calls """
         #if (member.subnet_id and
         #        not validate.subnet_exists(member.subnet_id, context=context)):
         #    raise exceptions.NotFound(resource='Subnet', id=member.subnet_id)
@@ -231,7 +232,8 @@ class MemberController(base.BaseController):
         return member_types.MemberRootResponse(member=result)
 
     def _graph_create(self, lock_session, member_dict):
-        pool = self.repositories.pool.get(lock_session, id=self.pool_id)
+        pool_id = member_dict.get('pool_id', self.pool_id)
+        pool = self.repositories.pool.get(lock_session, id=pool_id)
 
         # Validate and store port SR-IOV vnic_type
         request_sriov = member_dict.pop('request_sriov')
@@ -255,7 +257,7 @@ class MemberController(base.BaseController):
             member_dict[constants.VNIC_TYPE] = constants.VNIC_TYPE_NORMAL
 
         member_dict = db_prepare.create_member(
-            member_dict, self.pool_id, bool(pool.health_monitor))
+            member_dict, pool_id, bool(pool.health_monitor))
         db_member = self._validate_create_member(lock_session, member_dict)
 
         return db_member
@@ -377,12 +379,10 @@ class MembersController(MemberController):
     def __init__(self, pool_id):
         super().__init__(pool_id)
 
-    def _put(self, additive_only=False, members_=None, dispatch_driver=True):
-        """Inner put method used by both MembersController.put and
-        AllMembersController.put. This is needed due to the dispatch_driver
-        argument, which is not supposed to be exposed to the API. Therefore,
-        this function cannot be annotated with wsexpose.
-        """
+    @wsme_pecan.wsexpose(None, wtypes.text,
+                         body=member_types.MembersRootPUT, status_code=202)
+    def put(self, additive_only=False, members_=None):
+        """Updates all members."""
         members = members_.members
         additive_only = strutils.bool_from_string(additive_only)
         context = pecan_request.context.get('octavia_context')
@@ -519,101 +519,215 @@ class MembersController(MemberController):
                         context.session, m.id,
                         provisioning_status=constants.PENDING_DELETE)
 
-        # Dispatch to the driver
-        if dispatch_driver:
+            # Dispatch to the driver
             LOG.info("Sending Pool %s batch member update to provider %s",
                      db_pool.id, driver.name)
             driver_utils.call_provider(
                 driver.name, driver.member_batch_update, db_pool.id,
                 provider_members)
 
-    @wsme_pecan.wsexpose(None, wtypes.text,
-                         body=member_types.MembersRootPUT, status_code=202)
-    def put(self, additive_only=False, members_=None):
-        """Updates all members of a pool."""
-        self._put(additive_only=additive_only, members_=members_, dispatch_driver=True)
 
-
-class AllMembersController(MembersController):
+class CrossPoolMembersController(MembersController):
 
     def __init__(self):
         super().__init__(None)
+
+    def _test_lb_and_listener_and_pool_statuses(self, session,
+                                                load_balancer_id, pool_ids):
+        """Verify load balancer is in a mutable state and set status."""
+
+        class NotFound(exceptions.APIException):
+            """More generic version of exceptions.NotFound with arbitrary
+            message"""
+            code = 404
+            def __init__(self, msg):
+                self.msg = msg
+                super().__init__(detail=self.msg)
+
+        pool_model = self.repositories.pool.model_class
+        pools = session.query(pool_model).filter(
+            pool_model.id.in_(pool_ids)).all()
+
+        # check that all specified pools were found
+        if len(pools) < len(pool_ids):
+            found_pool_ids = [p.id for p in pools]
+            missing_pools = filter(lambda pool_id: pool_id not in
+                                   found_pool_ids, pool_ids)
+            raise NotFound(f"Pools not found: {' '.join(missing_pools)}")
+
+        # set LB and listeners provisioning statuses
+        listener_ids = [l.id for p in pools for l in p.listeners]
+        if not self.repositories.test_and_set_lb_and_listeners_prov_status(
+                session, load_balancer_id,
+                constants.PENDING_UPDATE, constants.PENDING_UPDATE,
+                listener_ids=listener_ids):
+            LOG.info("Members cannot be created or modified because the "
+                     "Load Balancer is in an immutable state")
+            raise exceptions.ImmutableObject(resource='Load Balancer',
+                                             id=load_balancer_id)
+
+        # set pool provisioning statuses (already guarded by LB row lock)
+        for pool in pools:
+            if pool.provisioning_status not in constants.MUTABLE_STATUSES:
+                raise exceptions.ImmutableObject(resource='Pool', id=pool.id)
+            self.repositories.pool.update(
+                session, pool.id,
+                provisioning_status=constants.PENDING_UPDATE)
+
+    def _get_lb_for_pools(self, context, pool_ids):
+        """Check that the pools belong to exactly LB and return it.
+        Does not check that all pools actually exist. That is done
+        separately."""
+
+        # we cannot use self.repositories.pool.get_all, since it doesn't
+        # support filtering by multiple values (`id='foo' or id='bar'`).
+        pool_model = self.repositories.pool.model_class
+        lb_ids = context.session.query(pool_model.load_balancer_id).filter(
+            pool_model.id.in_(pool_ids),
+            pool_model.provisioning_status != constants.DELETED
+            ).distinct().all()
+
+        # check that an LB has been found
+        if len(lb_ids) < 1:
+            raise NotFound("No load balancer found for the provided pools.")
+
+        # check that the pools belong to one single LB and get its ID
+        if len(lb_ids) > 1:
+            raise exceptions.InvalidFilterArgument()
+
+        # ID is the first element of the first tuple
+        # TODO can lb_ids be empty? I. e. can pool_ids be empty? I. e. can members_ be empty?
+        lb_id = lb_ids[0][0]
+        return lb_id
 
     @wsme_pecan.wsexpose(None, wtypes.text,
                          body=member_types.CrossPoolMembersRootPUT, status_code=202)
     def put(self, additive_only=False, members_=None):
         """Updates all members across several pools."""
         members = members_.members
+        additive_only = strutils.bool_from_string(additive_only)
         context = pecan_request.context.get('octavia_context')
+        pool_ids = set(m.pool_id for m in members)
+
+        # get baseline LB data for provider update call
         with context.session.begin():
-
-            # get the pools from the DB
-            pool_ids = set(m.pool_id for m in members)
-            # we cannot use self.repositories.pool.get_all, since it doesn't
-            # support filtering by multiple values (id='...' or id='...').
-            pool_model = self.repositories.pool.model_class
-            lb_ids = context.session.query(pool_model.load_balancer_id).filter(
-                pool_model.id.in_(pool_ids),
-                pool_model.provisioning_status != constants.DELETED
-                ).distinct().all()
-
-            # check that an LB has been found
-            if len(lb_ids) < 1:
-                exc = exceptions.NotFound()
-                exc.msg = "No load balancer found for the provided pools."
-                raise exc
-
-            # check that the pools belong to one single LB and get its ID
-            if len(lb_ids) > 1:
-                raise exceptions.InvalidFilterArgument()
-            # ID is the first element of the first tuple
-            lb_id = lb_ids[0][0]
-
-            # baseline LB data for provider update call
+            lb_id = self._get_lb_for_pools(context, pool_ids)
             db_lb = self._get_db_lb(context.session, lb_id, show_deleted=False)
-            old_provider_lb = (
-                driver_utils.db_loadbalancer_to_provider_loadbalancer(
-                    db_lb, for_delete=True))
+            project_id, provider = db_lb.project_id, db_lb.provider
 
-        # call MembersController._put for each pool.
-        some_pools_updated = False
-        for pool_id in pool_ids:
+        # Check POST+PUT+DELETE since this operation is all of 'CUD'
+        self._auth_validate_action(context, project_id, constants.RBAC_POST)
+        self._auth_validate_action(context, project_id, constants.RBAC_PUT)
+        if not additive_only:
+            self._auth_validate_action(context, project_id,
+                                       constants.RBAC_DELETE)
 
-            # since _put sets the pool's LB to PENDING_UPDATE, we need to
-            # reset it for the next pool, if we already updated a pool.
-            if some_pools_updated:
-                with context.session.begin():
-                    self.repositories.load_balancer.update(
-                        context.session, lb_id,
-                        provisioning_status=constants.ACTIVE)
-
-            # prepare body for regular batch member update
-            body = member_types.MembersRootPUT()
-            # Each element of the members list is a CrossPoolMemberPUT
-            # instance, which inherits from MemberPOST. The MembersController
-            # expects MemberPOST, so this works fine.
-            body.members = [m for m in members if m.pool_id == pool_id]
-
-            # run regular batch member update for this pool
-            # No need to instantiate the superclass, just call its __init__
-            # method (note that this sets self.pool_id)
-            super().__init__(pool_id)
-            super()._put(additive_only=additive_only, members_=body,
-                         dispatch_driver=False)
-            some_pools_updated = True
-
-        # updated LB data for provider update call
-        with context.session.begin():
-            db_lb = self._get_db_lb(context.session, lb_id, show_deleted=False)
-            new_provider_lb = (
-                driver_utils.db_loadbalancer_to_provider_loadbalancer(
-                    db_lb, for_delete=True))
-
-        # Dispatch to the provider
-        _, provider = self._get_lb_project_id_provider(context.session, lb_id)
+        # Load the driver early as it also provides validation
         driver = driver_factory.get_driver(provider)
-        LOG.info("Sending cross-pool batch member load balancer update to provider %s",
-                 driver.name)
-        driver_utils.call_provider(
-            driver.name, driver.loadbalancer_update,
-            old_provider_lb, new_provider_lb)
+
+        with context.session.begin():
+            self._test_lb_and_listener_and_pool_statuses(context.session, lb_id, pool_ids)
+
+            # we cannot use self.repositories.pool.get_all, since it doesn't
+            # support filtering by multiple values (`id='foo' or id='bar'`).
+            member_model = self.repositories.member.model_class
+            old_members = context.session.query(member_model).filter(
+                member_model.pool_id.in_(pool_ids),
+                member_model.provisioning_status != constants.DELETED
+                ).all()
+
+            old_member_uniques = {(m.pool_id, m.ip_address, m.protocol_port):
+                                  m.id for m in old_members}
+            new_member_uniques = [(m.pool_id, m.address, m.protocol_port)
+                                  for m in members]
+
+            # Find members that are brand new or updated
+            new_members = []
+            updated_members = []
+            updated_member_uniques = set()
+            for m in members:
+                key = (m.pool_id, m.address, m.protocol_port)
+                if key not in old_member_uniques:
+                    validate.ip_not_reserved(m.address)
+                    new_members.append(m)
+                else:
+                    m.id = old_member_uniques[key]
+                    if key in updated_member_uniques:
+                        LOG.error("Member %s is updated multiple times in "
+                                  "the same cross-pool batch request.", m.id)
+                        raise exceptions.ValidationException(
+                            detail=_("Member must be updated only once in the "
+                                     "same request."))
+                    updated_member_uniques.add(key)
+                    updated_members.append(m)
+
+            # Find members that are deleted
+            deleted_members = []
+            for m in old_members:
+                if (m.pool_id, m.ip_address, m.protocol_port) not in new_member_uniques:
+                    deleted_members.append(m)
+
+            # check quota
+            if additive_only:
+                member_count_diff = len(new_members)
+            else:
+                member_count_diff = len(new_members) - len(deleted_members)
+            if member_count_diff > 0 and self.repositories.check_quota_met(
+                    context.session, data_models.Member,
+                    project_id, count=member_count_diff):
+                raise exceptions.QuotaException(
+                    resource=data_models.Member._name())
+
+            # Do the actual updating
+
+            # Create new members
+            # NOTE: CCloud: Not validating subnets (not used by F5 provider
+            #       driver, so don't risk failing API calls. Same as in
+            #       MemberController.post)
+            provider_members = []
+            for m in new_members:
+                m = m.to_dict(render_unsets=False)
+                m['project_id'] = project_id
+                created_member = self._graph_create(context.session, m)
+                provider_member = driver_utils.db_member_to_provider_member(
+                    created_member)
+                provider_members.append(provider_member)
+
+            # Update old members
+            for m in updated_members:
+                m.provisioning_status = constants.PENDING_UPDATE
+                m.project_id = project_id
+                db_member_dict = m.to_dict(render_unsets=False)
+                db_member_dict.pop('id')
+                # We don't allow updating the vnic_type
+                # TODO(johnsom) Give the user an error once we change the
+                #               wsme type for batch member update to not use
+                #               the MemberPOST type
+                db_member_dict.pop(constants.REQUEST_SRIOV)
+                self.repositories.member.update(
+                    context.session, m.id, **db_member_dict)
+                provider_members.append(
+                    driver_utils.db_member_to_provider_member(m))
+
+            # Delete old members
+            for m in deleted_members:
+                if additive_only:
+                    # Members are appended to the dict and their status remains
+                    # unchanged, because they are logically "untouched".
+                    db_member_dict = m.to_dict(render_unsets=False)
+                    db_member_dict.pop('id')
+                    provider_members.append(
+                        driver_utils.db_member_to_provider_member(m))
+                else:
+                    # Members are changed to PENDING_DELETE and not passed.
+                    self.repositories.member.update(
+                        context.session, m.id,
+                        provisioning_status=constants.PENDING_DELETE)
+
+            # Dispatch to the driver
+            LOG.info("Sending cross-pool batch member update to provider %s",
+                     driver.name)
+            provider_loadbalancer = driver_utils.db_loadbalancer_to_provider_loadbalancer(db_lb)
+            driver_utils.call_provider(
+                driver.name, driver.member_batch_update_all_pools,
+                provider_loadbalancer)

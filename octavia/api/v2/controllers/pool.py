@@ -561,7 +561,7 @@ class PoolsController(base.BaseController):
             if not CONF.api_settings.allow_cross_pool_batch_members_update:
                 raise exceptions.NotFound(resource='endpoint',
                     id='cross-pool batch member update')
-            return member.AllMembersController(), remainder
+            return member.CrossPoolMembersController(), remainder
 
         # normal batch member update
         pool_id = path_segment
