@@ -616,6 +616,8 @@ class CrossPoolMembersController(MembersController):
             project_id, provider = db_lb.project_id, db_lb.provider
 
         # Check POST+PUT+DELETE since this operation is all of 'CUD'
+        self._auth_validate_action(context, project_id,
+                                   constants.RBAC_PUT_CROSS_POOL_MEMBERS)
         self._auth_validate_action(context, project_id, constants.RBAC_POST)
         self._auth_validate_action(context, project_id, constants.RBAC_PUT)
         if not additive_only:
