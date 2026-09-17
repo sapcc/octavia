@@ -527,6 +527,15 @@ class MembersController(MemberController):
                 provider_members)
 
 
+class NotFound(exceptions.APIException):
+    """More generic version of exceptions.NotFound with arbitrary
+    message"""
+    code = 404
+    def __init__(self, msg):
+        self.msg = msg
+        super().__init__(detail=self.msg)
+
+
 class CrossPoolMembersController(MembersController):
 
     def __init__(self):
@@ -535,14 +544,6 @@ class CrossPoolMembersController(MembersController):
     def _test_lb_and_listener_and_pool_statuses(self, session,
                                                 load_balancer_id, pool_ids):
         """Verify load balancer is in a mutable state and set status."""
-
-        class NotFound(exceptions.APIException):
-            """More generic version of exceptions.NotFound with arbitrary
-            message"""
-            code = 404
-            def __init__(self, msg):
-                self.msg = msg
-                super().__init__(detail=self.msg)
 
         pool_model = self.repositories.pool.model_class
         pools = session.query(pool_model).filter(
