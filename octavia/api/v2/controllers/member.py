@@ -472,10 +472,13 @@ class MembersController(MemberController):
                 if m.subnet_id and m.subnet_id not in valid_subnets:
                     # If the subnet does not exist,
                     # raise an exception and get out.
-                    if not validate.subnet_exists(
-                            m.subnet_id, context=context):
-                        raise exceptions.NotFound(
-                            resource='Subnet', id=m.subnet_id)
+                    # NOTE: CCloud: Not validating subnets (not used by F5 provider
+                    #       driver, so don't risk failing API calls. Same as in
+                    #       MemberController.post)
+                    # if not validate.subnet_exists(
+                    #         m.subnet_id, context=context):
+                    #     raise exceptions.NotFound(
+                    #         resource='Subnet', id=m.subnet_id)
 
                     # Mark the subnet as valid for future runs.
                     valid_subnets.add(m.subnet_id)
