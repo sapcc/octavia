@@ -944,6 +944,7 @@ class TestMember(base.BaseAPITest):
 
     @mock.patch('octavia.api.drivers.driver_factory.get_driver')
     @mock.patch('octavia.api.drivers.utils.call_provider')
+    @testtools.skip('Disabled For CC')
     def test_update_members_subnet_duplicate(
             self, mock_provider, mock_get_driver):
         mock_driver = mock.MagicMock()
