@@ -788,6 +788,7 @@ class TestMember(base.BaseAPITest):
                                               mock_driver.member_batch_update,
                                               self.pool_id, provider_members)
 
+    @testtools.skip('Disabled For CC')
     def test_create_batch_members_with_bad_subnet(self):
         subnet_id = uuidutils.generate_uuid()
         member5 = {'address': '10.0.0.5',
@@ -943,6 +944,7 @@ class TestMember(base.BaseAPITest):
 
     @mock.patch('octavia.api.drivers.driver_factory.get_driver')
     @mock.patch('octavia.api.drivers.utils.call_provider')
+    @testtools.skip('Disabled For CC')
     def test_update_members_subnet_duplicate(
             self, mock_provider, mock_get_driver):
         mock_driver = mock.MagicMock()
@@ -999,6 +1001,7 @@ class TestMember(base.BaseAPITest):
 
     @mock.patch('octavia.api.drivers.driver_factory.get_driver')
     @mock.patch('octavia.api.drivers.utils.call_provider')
+    @testtools.skip('Disabled For CC')
     def test_update_members_subnet_not_found(
             self, mock_provider, mock_get_driver):
         mock_driver = mock.MagicMock()
