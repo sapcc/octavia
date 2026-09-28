@@ -253,7 +253,7 @@ class BaseController(pecan_rest.RestController):
             loadbalancer = self.repositories.load_balancer.count(
                     session, project_id=project_id, show_deleted=False)
             # if a quota row exists, write back the recount result
-            if quotas:
+            if quotas and CONF.quotas.write_in_use_quota:
                 quotas.in_use_load_balancer = loadbalancer
 
         # if a quota row exists, look up whether listener usage is tracked
@@ -264,7 +264,7 @@ class BaseController(pecan_rest.RestController):
             listener = self.repositories.listener.count(
                     session, project_id=project_id, show_deleted=False)
             # if a quota row exists, write back the recount result
-            if quotas:
+            if quotas and CONF.quotas.write_in_use_quota:
                 quotas.in_use_listener = listener
 
         # if a quota row exists, look up whether pool usage is tracked
@@ -275,7 +275,7 @@ class BaseController(pecan_rest.RestController):
             pool = self.repositories.pool.count(
                     session, project_id=project_id, show_deleted=False)
             # if a quota row exists, write back the recount result
-            if quotas:
+            if quotas and CONF.quotas.write_in_use_quota:
                 quotas.in_use_pool = pool
 
         # if a quota row exists, look up whether member usage is tracked
@@ -286,7 +286,7 @@ class BaseController(pecan_rest.RestController):
             member = self.repositories.member.count(
                     session, project_id=project_id, show_deleted=False)
             # if a quota row exists, write back the recount result
-            if quotas:
+            if quotas and CONF.quotas.write_in_use_quota:
                 quotas.in_use_member = member
 
         # if a quota row exists, look up whether l7policy usage is tracked
@@ -297,7 +297,7 @@ class BaseController(pecan_rest.RestController):
             l7policy = self.repositories.l7policy.count(
                     session, project_id=project_id, show_deleted=False)
             # if a quota row exists, write back the recount result
-            if quotas:
+            if quotas and CONF.quotas.write_in_use_quota:
                 quotas.in_use_l7policy = l7policy
 
         # if a quota row exists, look up whether l7rule usage is tracked
@@ -308,7 +308,7 @@ class BaseController(pecan_rest.RestController):
             l7rule = self.repositories.l7rule.count(
                     session, project_id=project_id, show_deleted=False)
             # if a quota row exists, write back the recount result
-            if quotas:
+            if quotas and CONF.quotas.write_in_use_quota:
                 quotas.in_use_l7rule = l7rule
 
         # if a quota row exists, look up whether healthmonitor usage is tracked
@@ -319,7 +319,7 @@ class BaseController(pecan_rest.RestController):
             healthmonitor = self.repositories.health_monitor.count(
                     session, project_id=project_id, show_deleted=False)
             # if a quota row exists, write back the recount result
-            if quotas:
+            if quotas and CONF.quotas.write_in_use_quota:
                 quotas.in_use_health_monitor = healthmonitor
 
         return data_models.QuotaUsage(
