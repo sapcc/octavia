@@ -490,6 +490,7 @@ class MembersController(MemberController):
                     created_member)
                 provider_members.append(provider_member)
             # Update old members
+            member_updates = []
             for m in updated_members:
                 m.provisioning_status = constants.PENDING_UPDATE
                 m.project_id = db_pool.project_id
@@ -500,8 +501,7 @@ class MembersController(MemberController):
                 #               wsme type for batch member update to not use
                 #               the MemberPOST type
                 db_member_dict.pop(constants.REQUEST_SRIOV)
-                self.repositories.member.update(
-                    context.session, m.id, **db_member_dict)
+                member_updates.append((m.id, db_member_dict))
 
                 m.pool_id = self.pool_id
                 provider_members.append(
@@ -518,9 +518,12 @@ class MembersController(MemberController):
                         driver_utils.db_member_to_provider_member(m))
                 else:
                     # Members are changed to PENDING_DELETE and not passed.
-                    self.repositories.member.update(
-                        context.session, m.id,
-                        provisioning_status=constants.PENDING_DELETE)
+                    member_updates.append(
+                        (m.id, {'provisioning_status': constants.PENDING_DELETE}))
+            # Update members sorted by ID to avoid deadlocks with concurrent threads
+            for member_id, kwargs in sorted(member_updates, key=lambda x: x[0]):
+                self.repositories.member.update(
+                    context.session, member_id, **kwargs)
 
             # Dispatch to the driver
             LOG.info("Sending Pool %s batch member update to provider %s",
@@ -700,6 +703,7 @@ class CrossPoolMembersController(MembersController):
                 provider_members.append(provider_member)
 
             # Update old members
+            member_updates = []
             for m in updated_members:
                 m.provisioning_status = constants.PENDING_UPDATE
                 m.project_id = project_id
@@ -710,8 +714,7 @@ class CrossPoolMembersController(MembersController):
                 #               wsme type for batch member update to not use
                 #               the MemberPOST type
                 db_member_dict.pop(constants.REQUEST_SRIOV)
-                self.repositories.member.update(
-                    context.session, m.id, **db_member_dict)
+                member_updates.append((m.id, db_member_dict))
                 provider_members.append(
                     driver_utils.db_member_to_provider_member(m))
 
@@ -726,9 +729,12 @@ class CrossPoolMembersController(MembersController):
                         driver_utils.db_member_to_provider_member(m))
                 else:
                     # Members are changed to PENDING_DELETE and not passed.
-                    self.repositories.member.update(
-                        context.session, m.id,
-                        provisioning_status=constants.PENDING_DELETE)
+                    member_updates.append(
+                        (m.id, {'provisioning_status': constants.PENDING_DELETE}))
+            # Update members sorted by ID to avoid deadlocks with concurrent threads
+            for member_id, kwargs in sorted(member_updates, key=lambda x: x[0]):
+                self.repositories.member.update(
+                    context.session, member_id, **kwargs)
 
             # Dispatch to the driver
             LOG.info("Sending cross-pool batch member update to provider %s",
