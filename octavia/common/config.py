@@ -836,6 +836,9 @@ quota_opts = [
     cfg.IntOpt('default_l7rule_quota',
                default=constants.QUOTA_UNLIMITED,
                help=_('Default per project l7rule quota.')),
+    cfg.BoolOpt('write_in_use_quota',
+                default=True,
+                help='Whether to update quotas.in_use* in _do_quota_check()'),
 ]
 
 audit_opts = [

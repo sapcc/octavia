@@ -477,7 +477,8 @@ class Repositories:
                 lb_count = quotas.in_use_load_balancer + count
             # Decide if the quota is met
             if lb_count <= lb_quota or lb_quota == consts.QUOTA_UNLIMITED:
-                quotas.in_use_load_balancer = lb_count
+                if CONF.quotas.write_in_use_quota:
+                    quotas.in_use_load_balancer = lb_count
                 return False
             return True
         if _class == data_models.Listener:
@@ -498,7 +499,8 @@ class Repositories:
             # Decide if the quota is met
             if (listener_count <= listener_quota or
                     listener_quota == consts.QUOTA_UNLIMITED):
-                quotas.in_use_listener = listener_count
+                if CONF.quotas.write_in_use_quota:
+                    quotas.in_use_listener = listener_count
                 return False
             return True
         if _class == data_models.Pool:
@@ -519,7 +521,8 @@ class Repositories:
             # Decide if the quota is met
             if (pool_count <= pool_quota or
                     pool_quota == consts.QUOTA_UNLIMITED):
-                quotas.in_use_pool = pool_count
+                if CONF.quotas.write_in_use_quota:
+                    quotas.in_use_pool = pool_count
                 return False
             return True
         if _class == data_models.HealthMonitor:
@@ -540,7 +543,8 @@ class Repositories:
             # Decide if the quota is met
             if (hm_count <= hm_quota or
                     hm_quota == consts.QUOTA_UNLIMITED):
-                quotas.in_use_health_monitor = hm_count
+                if CONF.quotas.write_in_use_quota:
+                    quotas.in_use_health_monitor = hm_count
                 return False
             return True
         if _class == data_models.Member:
@@ -561,7 +565,8 @@ class Repositories:
             # Decide if the quota is met
             if (member_count <= member_quota or
                     member_quota == consts.QUOTA_UNLIMITED):
-                quotas.in_use_member = member_count
+                if CONF.quotas.write_in_use_quota:
+                    quotas.in_use_member = member_count
                 return False
             return True
         if _class == data_models.L7Policy:
@@ -582,7 +587,8 @@ class Repositories:
             # Decide if the quota is met
             if (l7policy_count <= l7policy_quota or
                     l7policy_quota == consts.QUOTA_UNLIMITED):
-                quotas.in_use_l7policy = l7policy_count
+                if CONF.quotas.write_in_use_quota:
+                    quotas.in_use_l7policy = l7policy_count
                 return False
             return True
         if _class == data_models.L7Rule:
@@ -603,7 +609,8 @@ class Repositories:
             # Decide if the quota is met
             if (l7rule_count <= l7rule_quota or
                     l7rule_quota == consts.QUOTA_UNLIMITED):
-                quotas.in_use_l7rule = l7rule_count
+                if CONF.quotas.write_in_use_quota:
+                    quotas.in_use_l7rule = l7rule_count
                 return False
             return True
         return False
